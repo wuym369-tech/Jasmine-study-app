@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+/* 茉莉花主題自訂色彩 */
+@theme {
+  --color-jasmine-50: #f9fef5;
+  --color-jasmine-100: #edfcd8;
+  --color-jasmine-200: #d8f8b2;
+  --color-jasmine-300: #b8f07d;
+  --color-jasmine-400: #93e344;
+  --color-jasmine-500: #6fcb1e;
+  --color-jasmine-600: #54a213;
+  --color-jasmine-700: #407c12;
+  --color-jasmine-800: #356214;
+  --color-jasmine-900: #2e5215;
+  --color-cream-50: #fffef7;
+  --color-cream-100: #fffde8;
+  --color-cream-200: #fff9c4;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans TC', sans-serif;
+  background-color: #f9fef5;
+  color: #2e5215;
+}
