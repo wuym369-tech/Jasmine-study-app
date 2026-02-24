@@ -1,14 +1,14 @@
 <template>
   <div class="space-y-8">
 
-    <!-- 說明 -->
+    <!-- 说明 -->
     <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
-      ⚠️ 及早發現、及早防治是關鍵！定期檢查葉背和嫩梢，發現異狀立即處理。
+      ⚠️ 及早发现、及早防治是关键！定期检查叶背和嫩梢，发现异状立即处理。
     </div>
 
-    <!-- 蟲害 -->
+    <!-- 虫害 -->
     <section>
-      <h2 class="text-xl font-bold text-red-700 mb-4">🐛 蟲害（6種）</h2>
+      <h2 class="text-xl font-bold text-red-700 mb-4">🐛 虫害（6种）</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div v-for="pest in pests" :key="pest.id"
           class="rounded-2xl border-2 p-5 cursor-pointer transition-all duration-200 hover:shadow-md"
@@ -30,20 +30,20 @@
 
           <div class="text-xs text-gray-500 mb-2">🗓️ {{ pest.season }}</div>
 
-          <!-- 展開詳情 -->
+          <!-- 展开详情 -->
           <div v-if="selectedPest === pest.id" class="mt-3 space-y-3 border-t border-gray-200 pt-3">
             <div>
-              <div class="text-xs font-bold text-gray-600 mb-1">⚡ 有利條件</div>
+              <div class="text-xs font-bold text-gray-600 mb-1">⚡ 有利条件</div>
               <p class="text-xs text-gray-600">{{ pest.conditions }}</p>
             </div>
             <div>
-              <div class="text-xs font-bold text-gray-600 mb-1">🔍 症狀識別</div>
+              <div class="text-xs font-bold text-gray-600 mb-1">🔍 症状识别</div>
               <ul class="text-xs text-gray-600 space-y-1">
                 <li v-for="s in pest.symptoms" :key="s">• {{ s }}</li>
               </ul>
             </div>
             <div>
-              <div class="text-xs font-bold text-gray-600 mb-1">🛡️ 預防方法</div>
+              <div class="text-xs font-bold text-gray-600 mb-1">🛡️ 预防方法</div>
               <ul class="text-xs text-gray-600 space-y-1">
                 <li v-for="p in pest.prevention" :key="p">• {{ p }}</li>
               </ul>
@@ -55,7 +55,7 @@
           </div>
 
           <div class="text-xs text-gray-400 mt-2 text-center">
-            {{ selectedPest === pest.id ? '▲ 收起' : '▼ 點擊查看詳情' }}
+            {{ selectedPest === pest.id ? '▲ 收起' : '▼ 点击查看详情' }}
           </div>
         </div>
       </div>
@@ -63,7 +63,7 @@
 
     <!-- 病害 -->
     <section>
-      <h2 class="text-xl font-bold text-purple-700 mb-4">🍄 病害（5種）</h2>
+      <h2 class="text-xl font-bold text-purple-700 mb-4">🍄 病害（5种）</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div v-for="disease in diseases" :key="disease.id"
           class="rounded-2xl border-2 p-5 cursor-pointer transition-all duration-200 hover:shadow-md"
@@ -87,17 +87,17 @@
 
           <div v-if="selectedDisease === disease.id" class="mt-3 space-y-3 border-t border-gray-200 pt-3">
             <div>
-              <div class="text-xs font-bold text-gray-600 mb-1">⚡ 有利條件</div>
+              <div class="text-xs font-bold text-gray-600 mb-1">⚡ 有利条件</div>
               <p class="text-xs text-gray-600">{{ disease.conditions }}</p>
             </div>
             <div>
-              <div class="text-xs font-bold text-gray-600 mb-1">🔍 症狀識別</div>
+              <div class="text-xs font-bold text-gray-600 mb-1">🔍 症状识别</div>
               <ul class="text-xs text-gray-600 space-y-1">
                 <li v-for="s in disease.symptoms" :key="s">• {{ s }}</li>
               </ul>
             </div>
             <div>
-              <div class="text-xs font-bold text-gray-600 mb-1">🛡️ 預防方法</div>
+              <div class="text-xs font-bold text-gray-600 mb-1">🛡️ 预防方法</div>
               <ul class="text-xs text-gray-600 space-y-1">
                 <li v-for="p in disease.prevention" :key="p">• {{ p }}</li>
               </ul>
@@ -109,7 +109,7 @@
           </div>
 
           <div class="text-xs text-gray-400 mt-2 text-center">
-            {{ selectedDisease === disease.id ? '▲ 收起' : '▼ 點擊查看詳情' }}
+            {{ selectedDisease === disease.id ? '▲ 收起' : '▼ 点击查看详情' }}
           </div>
         </div>
       </div>

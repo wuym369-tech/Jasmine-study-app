@@ -1,9 +1,9 @@
 <template>
   <div class="space-y-10">
 
-    <!-- 全年週期概覽 -->
+    <!-- 全年周期概览 -->
     <section>
-      <h2 class="section-title">📅 全年管理週期</h2>
+      <h2 class="section-title">📅 全年管理周期</h2>
       <div class="space-y-3">
         <div
           v-for="m in monthlyGrowth" :key="m.month"
@@ -11,7 +11,7 @@
           :class="m.color"
           @click="selected = selected === m.month ? null : m.month"
         >
-          <!-- 標題列 -->
+          <!-- 标题栏 -->
           <div class="flex items-center gap-4 p-4">
             <span class="text-3xl">{{ m.icon }}</span>
             <div class="flex-1 min-w-0">
@@ -19,16 +19,16 @@
                 <span class="font-bold text-gray-800">{{ m.month }}</span>
                 <span class="text-xs px-2 py-0.5 rounded-full font-medium" :class="m.badge">{{ m.status }}</span>
               </div>
-              <p class="text-xs text-gray-500 mt-0.5">{{ m.season }} · 氣溫 {{ m.temp }}</p>
+              <p class="text-xs text-gray-500 mt-0.5">{{ m.season }} · 气温 {{ m.temp }}</p>
             </div>
             <span class="text-gray-400 text-sm flex-shrink-0">{{ selected === m.month ? '▲' : '▼' }}</span>
           </div>
 
-          <!-- 展開詳情 -->
+          <!-- 展开详情 -->
           <div v-if="selected === m.month" class="px-4 pb-4 border-t border-gray-200 pt-3 space-y-3">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div class="bg-white bg-opacity-70 rounded-xl p-3">
-                <div class="text-xs font-bold text-blue-700 mb-2">💧 澆水</div>
+                <div class="text-xs font-bold text-blue-700 mb-2">💧 浇水</div>
                 <p class="text-xs text-gray-700">{{ m.water }}</p>
               </div>
               <div class="bg-white bg-opacity-70 rounded-xl p-3">
@@ -53,9 +53,9 @@
       </div>
     </section>
 
-    <!-- 生長里程碑 -->
+    <!-- 生长里程碑 -->
     <section>
-      <h2 class="section-title">🏁 從種植到採收 — 生長里程碑</h2>
+      <h2 class="section-title">🏁 从种植到采收 — 生长里程碑</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div v-for="(m, i) in growthMilestones" :key="m.phase"
           class="bg-white rounded-xl border border-green-100 p-4 flex gap-4">
@@ -78,7 +78,7 @@
     <section>
       <h2 class="section-title">✂️ 修剪管理指南</h2>
       <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4 text-xs text-yellow-800">
-        💡 茉莉花每條新枝只開一次花，<strong>修剪的好壞直接決定一年能開幾批花</strong>。正確修剪可確保每年開三批！
+        💡 茉莉花每条新枝只开一次花，<strong>修剪的好坏直接决定一年能开几批花</strong>。正确修剪可确保每年开三批！
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div v-for="guide in pruningGuide" :key="guide.name"
@@ -99,9 +99,9 @@
       </div>
     </section>
 
-    <!-- 溫度需求速查 -->
+    <!-- 温度需求速查 -->
     <section>
-      <h2 class="section-title">🌡️ 溫度需求速查</h2>
+      <h2 class="section-title">🌡️ 温度需求速查</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div v-for="t in tempGuide" :key="t.label"
           class="flex items-center gap-3 bg-white rounded-xl p-4 border" :class="t.border">
@@ -124,12 +124,12 @@ import { monthlyGrowth, growthMilestones, pruningGuide } from '../../data/learnC
 const selected = ref(null)
 
 const tempGuide = [
-  { temp: '32-37°C', label: '花蕾發育最快，香氣最濃', icon: '🔥', border: 'border-red-200', textColor: 'text-red-600' },
-  { temp: '25-35°C', label: '最適合生長和開花的溫度範圍', icon: '☀️', border: 'border-yellow-200', textColor: 'text-yellow-600' },
-  { temp: '20°C+', label: '花苞開始形成的最低溫度', icon: '🌤️', border: 'border-green-200', textColor: 'text-green-600' },
-  { temp: '10°C以下', label: '生長基本停止，進入休眠', icon: '🌡️', border: 'border-blue-200', textColor: 'text-blue-600' },
-  { temp: '3-5°C', label: '葉片開始受損，需緊急保護', icon: '❄️', border: 'border-indigo-200', textColor: 'text-indigo-600' },
-  { temp: '0°C以下', label: '枝條嚴重受損，可能整株死亡', icon: '🥶', border: 'border-purple-200', textColor: 'text-purple-600' },
+  { temp: '32-37°C', label: '花蕾发育最快，香气最浓', icon: '🔥', border: 'border-red-200', textColor: 'text-red-600' },
+  { temp: '25-35°C', label: '最适合生长和开花的温度范围', icon: '☀️', border: 'border-yellow-200', textColor: 'text-yellow-600' },
+  { temp: '20°C+', label: '花蕾开始形成的最低温度', icon: '🌤️', border: 'border-green-200', textColor: 'text-green-600' },
+  { temp: '10°C以下', label: '生长基本停止，进入休眠', icon: '🌡️', border: 'border-blue-200', textColor: 'text-blue-600' },
+  { temp: '3-5°C', label: '叶片开始受损，需紧急保护', icon: '❄️', border: 'border-indigo-200', textColor: 'text-indigo-600' },
+  { temp: '0°C以下', label: '枝条严重受损，可能整株死亡', icon: '🥶', border: 'border-purple-200', textColor: 'text-purple-600' },
 ]
 </script>
 

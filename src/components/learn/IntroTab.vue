@@ -1,9 +1,9 @@
 <template>
   <div class="space-y-10">
 
-    <!-- 關鍵數據 -->
+    <!-- 关键数据 -->
     <section>
-      <h2 class="section-title">📊 橫州茉莉花關鍵數據</h2>
+      <h2 class="section-title">📊 横州茉莉花关键数据</h2>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div v-for="stat in stats" :key="stat.label"
           class="bg-white rounded-2xl p-5 text-center border border-green-100 shadow-sm">
@@ -13,13 +13,13 @@
         </div>
       </div>
       <p class="mt-3 text-center text-green-700 font-medium text-sm">
-        🌏 全球每10朵茉莉花，就有6朵來自廣西橫州
+        🌏 全球每10朵茉莉花，就有6朵来自广西横州
       </p>
     </section>
 
-    <!-- 茉莉花品種 -->
+    <!-- 茉莉花品种 -->
     <section>
-      <h2 class="section-title">🌸 茉莉花品種介紹</h2>
+      <h2 class="section-title">🌸 茉莉花品种介绍</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div v-for="v in varieties" :key="v.id"
           class="rounded-2xl border-2 p-6" :class="v.color">
@@ -31,18 +31,18 @@
           <p class="text-sm text-gray-600 mb-4">{{ v.desc }}</p>
           <div class="space-y-1 text-xs text-gray-500">
             <div class="flex justify-between"><span>植株高度</span><span class="font-medium">{{ v.height }}</span></div>
-            <div class="flex justify-between"><span>花瓣數量</span><span class="font-medium">{{ v.petals }}</span></div>
-            <div class="flex justify-between"><span>香氣濃度</span><span>{{ v.fragrance }}</span></div>
-            <div class="flex justify-between"><span>栽培難度</span><span>{{ v.cultivation }}</span></div>
+            <div class="flex justify-between"><span>花瓣数量</span><span class="font-medium">{{ v.petals }}</span></div>
+            <div class="flex justify-between"><span>香气浓度</span><span>{{ v.fragrance }}</span></div>
+            <div class="flex justify-between"><span>栽培难度</span><span>{{ v.cultivation }}</span></div>
             <div class="flex justify-between"><span>主要用途</span><span class="font-medium">{{ v.use }}</span></div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 橫州優勢 -->
+    <!-- 横州优势 -->
     <section>
-      <h2 class="section-title">🏆 為什麼是橫州？</h2>
+      <h2 class="section-title">🏆 为什么是横州？</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div v-for="adv in advantages" :key="adv.title"
           class="bg-white rounded-xl p-5 border border-green-100 flex gap-4">
@@ -55,9 +55,9 @@
       </div>
     </section>
 
-    <!-- 歷史時間軸 -->
+    <!-- 历史时间轴 -->
     <section>
-      <h2 class="section-title">📜 橫州茉莉花歷史</h2>
+      <h2 class="section-title">📜 横州茉莉花历史</h2>
       <div class="relative">
         <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-green-200"></div>
         <div class="space-y-6">
