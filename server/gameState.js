@@ -5,6 +5,8 @@
 export const sessions = {}   // sessionId -> session
 export const roomCodes = {}  // roomCode -> sessionId
 
+const QUESTION_DURATION_MS = 60_000
+
 function randomCode() {
   const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
   const digits = '23456789'
@@ -27,7 +29,9 @@ export function createSession({ questionIds, teacherSocketId }) {
     questionIds,
     currentIndex: -1,
     teams: {},               // teamId -> { teamName, socketId, totalScore, answers }
-    currentAnswers: {},      // teamId -> answer key (reset each question)
+    currentAnswers: {},      // teamId -> { answer, answeredAt } (reset each question)
+    questionStartedAt: null,
+    questionEndsAt: null,
   }
   roomCodes[roomCode] = sessionId
   return sessions[sessionId]
@@ -65,12 +69,16 @@ export function startQuestion(session) {
   session.currentIndex++
   session.phase = 'question'
   session.currentAnswers = {}
+  session.questionStartedAt = Date.now()
+  session.questionEndsAt = session.questionStartedAt + QUESTION_DURATION_MS
 }
 
 export function submitAnswer(session, teamId, answer) {
   if (session.phase !== 'question') return false
   if (session.currentAnswers[teamId] !== undefined) return false // already answered
-  session.currentAnswers[teamId] = answer
+  const now = Date.now()
+  if (session.questionEndsAt && now > session.questionEndsAt) return false
+  session.currentAnswers[teamId] = { answer, answeredAt: now }
   return true
 }
 
@@ -84,20 +92,36 @@ export function revealAnswer(session) {
   console.log(`[REVEAL] currentShuffled:`, JSON.stringify(session.currentShuffled))
   console.log(`[REVEAL] currentAnswers:`, JSON.stringify(session.currentAnswers))
 
+  const roundResults = []
+
   // Score each team
   for (const [teamId, team] of Object.entries(session.teams)) {
-    const ans = session.currentAnswers[teamId]
-    let points = 0
+    const entry = session.currentAnswers[teamId]
+    const ans = entry?.answer
+    const answeredAt = entry?.answeredAt ?? null
+
+    let basePoints = 0
     if (ans !== undefined) {
       const score = optionScores[ans] ?? 0
-      points = score === 3 ? 3 : score === 1 ? 1 : 0
+      basePoints = score === 3 ? 3 : score === 1 ? 1 : 0
     }
-    console.log(`[REVEAL] team=${team.teamName} ans=${ans} score=${optionScores[ans]} points=${points}`)
+
+    // Time bonus:
+    // 0-14s remaining => 0
+    // 15-29s remaining => 1
+    // 30-44s remaining => 2
+    // 45-60s remaining => 3
+    const remainingMs = (answeredAt && session.questionEndsAt) ? (session.questionEndsAt - answeredAt) : 0
+    const timeBonus = basePoints > 0 ? Math.max(0, Math.min(3, Math.floor(remainingMs / 15_000))) : 0
+    const points = basePoints + timeBonus
+
+    console.log(`[REVEAL] team=${team.teamName} ans=${ans} base=${basePoints} bonus=${timeBonus} points=${points}`)
     team.totalScore += points
-    team.answers[session.currentIndex] = { answer: ans, points }
+    team.answers[session.currentIndex] = { answer: ans, basePoints, timeBonus, points, answeredAt }
+    roundResults.push({ teamId, answer: ans, basePoints, timeBonus, points })
   }
 
-  return buildTeamScores(session)
+  return { teamScores: buildTeamScores(session), roundResults, correctAnswer }
 }
 
 export function buildTeamScores(session) {

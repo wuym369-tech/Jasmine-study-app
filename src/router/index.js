@@ -4,6 +4,7 @@ import LearnView from '../views/LearnView.vue'
 import DiscussView from '../views/DiscussView.vue'
 import GameView from '../views/GameView.vue'
 import AdminView from '../views/AdminView.vue'
+import ScreenView from '../views/ScreenView.vue'
 
 const routes = [
   { path: '/', component: HomeView },
@@ -11,6 +12,7 @@ const routes = [
   { path: '/discuss', component: DiscussView },
   { path: '/game', component: GameView },
   { path: '/admin', component: AdminView },
+  { path: '/screen', component: ScreenView },
 ]
 
 export default createRouter({

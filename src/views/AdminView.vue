@@ -62,7 +62,17 @@
       <div class="bg-white rounded-2xl p-8 border-2 border-green-200 text-center mb-6">
         <p class="text-slate-500 mb-2 text-sm font-medium">房间代码（学生输入此代码加入）</p>
         <div class="text-6xl font-black text-green-600 tracking-widest mb-4">{{ roomCode }}</div>
-        <p class="text-slate-400 text-sm">队伍页面：<span class="font-mono bg-slate-100 px-2 py-1 rounded">{{ gameUrl }}</span></p>
+        <div class="text-slate-400 text-sm space-y-2">
+          <p>队伍页面（建议学生用同一 Wi‑Fi 打开）：</p>
+          <div class="space-y-1">
+            <div v-for="u in gameUrls" :key="u" class="font-mono bg-slate-100 px-2 py-1 rounded inline-block">
+              {{ u }}
+            </div>
+          </div>
+          <p v-if="isLocalhost" class="text-amber-700">
+            提醒：若老师页面是 `localhost`，学生手机打开 `localhost` 会连到手机自己；请优先使用上面的局域网 IP 链接。
+          </p>
+        </div>
       </div>
 
       <!-- 已加入队伍 -->
@@ -254,9 +264,20 @@ const categories = [
   { key: 'management', label: '👷 管理' },
 ]
 
-const gameUrl = computed(() => {
-  return window.location.origin + '/game'
+const lanIps = ref([])
+const isLocalhost = computed(() => {
+  return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
 })
+
+const baseOrigins = computed(() => {
+  if (!isLocalhost.value) return [window.location.origin]
+  const port = window.location.port ? `:${window.location.port}` : ''
+  const proto = window.location.protocol
+  const candidates = lanIps.value.map(ip => `${proto}//${ip}${port}`)
+  return candidates.length > 0 ? candidates : [window.location.origin]
+})
+
+const gameUrls = computed(() => baseOrigins.value.map(o => o + '/game'))
 
 const maxScore = computed(() => {
   if (teamScores.value.length === 0) return 1
@@ -394,6 +415,10 @@ onMounted(() => {
   if (savedId) {
     socket.emit('teacher:rejoin', { sessionId: savedId })
   }
+  fetch('/api/lan')
+    .then(r => r.ok ? r.json() : null)
+    .then(data => { lanIps.value = data?.ips || [] })
+    .catch(() => { lanIps.value = [] })
 })
 
 onUnmounted(() => {

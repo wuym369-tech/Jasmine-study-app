@@ -20,6 +20,13 @@ const io = new Server(httpServer, {
 const distPath = join(__dirname, '../dist')
 app.use(express.static(distPath))
 
+// Basic info for LAN access hints (used by /admin in dev/prod)
+app.get('/api/lan', (req, res) => {
+  res.json({
+    ips: getLanIPs(),
+  })
+})
+
 // All non-socket routes → index.html (Vue Router history mode)
 app.get('/{*path}', (req, res) => {
   res.sendFile(join(distPath, 'index.html'))
@@ -44,7 +51,7 @@ function getLanIPs() {
   return ips
 }
 
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 3001
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🌸 茉莉花研学App 服务器已启动`)
   console.log(`   本机访问: http://localhost:${PORT}`)

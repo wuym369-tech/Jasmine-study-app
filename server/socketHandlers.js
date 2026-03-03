@@ -32,6 +32,8 @@ export function registerHandlers(io, socket) {
       currentIndex: session.currentIndex,
       questionTotal: session.questionIds.length,
       currentAnswers: session.currentAnswers,
+      questionStartedAt: session.questionStartedAt,
+      questionEndsAt: session.questionEndsAt,
     })
   })
 
@@ -80,9 +82,11 @@ export function registerHandlers(io, socket) {
       partialText: partialOpt?.text || null,
     }
 
-    io.to(sessionId).emit('game:question_started', {
+    session.currentQuestionPayload = {
       questionIndex: session.currentIndex,
       total: session.questionIds.length,
+      questionStartedAt: session.questionStartedAt,
+      questionEndsAt: session.questionEndsAt,
       question: {
         id: q.id,
         title: q.title,
@@ -92,8 +96,12 @@ export function registerHandlers(io, socket) {
         categoryColor: q.categoryColor,
         icon: q.icon,
         difficulty: q.difficulty,
+        roles: q.roles || [],
+        hint15s: q.hint15s || '',
       },
-    })
+    }
+
+    io.to(sessionId).emit('game:question_started', session.currentQuestionPayload)
   })
 
   // ---- 老师：揭晓答案 ----
@@ -103,17 +111,20 @@ export function registerHandlers(io, socket) {
 
     const qId = session.questionIds[session.currentIndex]
     const q = scenarios.find(s => s.id === qId)
-    const teamScores = revealAnswer(session)
+    const revealed = revealAnswer(session)
 
-    io.to(sessionId).emit('game:answer_revealed', {
+    session.currentRevealPayload = {
       correctAnswer: session.currentShuffled?.answer || q.answer,
       explanation: q.explanation,
       partialAnswer: session.currentShuffled?.partialAnswer || null,
       partialText: session.currentShuffled?.partialText || null,
       partialExplanation: q.partialExplanation || null,
-      teamScores,
+      teamScores: revealed.teamScores,
+      roundResults: revealed.roundResults,
       currentAnswers: session.currentAnswers,
-    })
+    }
+
+    io.to(sessionId).emit('game:answer_revealed', session.currentRevealPayload)
   })
 
   // ---- 老师：下一题 ----
@@ -153,6 +164,13 @@ export function registerHandlers(io, socket) {
       return socket.emit('team:join_error', { message: '该场次已结束' })
     }
 
+    // Prevent new teams from joining mid-game; allow rejoin by same teamName
+    const normalizedName = teamName.trim()
+    const existing = Object.values(session.teams).find(t => t.teamName === normalizedName)
+    if (session.phase !== 'lobby' && !existing) {
+      return socket.emit('team:join_error', { message: '本场已开始，无法加入新队伍（可等待下一场）' })
+    }
+
     const result = joinTeam(session, { teamName: teamName.trim(), socketId: socket.id })
     if (result.error) {
       return socket.emit('team:join_error', { message: result.error })
@@ -171,6 +189,16 @@ export function registerHandlers(io, socket) {
         total: session.questionIds.length,
       } : {}),
     })
+
+    // If team rejoined mid-game, push current payload so UI isn't blank
+    if (result.alreadyExisted) {
+      if (session.phase === 'question' && session.currentQuestionPayload) {
+        socket.emit('game:question_started', session.currentQuestionPayload)
+      }
+      if (session.phase === 'revealed' && session.currentRevealPayload) {
+        socket.emit('game:answer_revealed', session.currentRevealPayload)
+      }
+    }
 
     // Notify admin
     const adminSocket = io.sockets.sockets.get(session.teacherSocketId)
@@ -197,7 +225,16 @@ export function registerHandlers(io, socket) {
     if (!session) return
 
     const ok = submitAnswer(session, teamId, answer)
-    if (!ok) return
+    if (!ok) {
+      // Helpful feedback (timeout / duplicate / wrong phase)
+      if (session.phase !== 'question') {
+        return socket.emit('team:submit_error', { message: '目前不是作答階段' })
+      }
+      if (session.questionEndsAt && Date.now() > session.questionEndsAt) {
+        return socket.emit('team:submit_error', { message: '本題已超時，無法提交答案' })
+      }
+      return
+    }
 
     // Confirm to team
     socket.emit('team:answer_confirmed', { answer })
@@ -236,6 +273,8 @@ export function registerHandlers(io, socket) {
       currentIndex: session.currentIndex,
       total: session.questionIds.length,
       answeredCount: Object.keys(session.currentAnswers).length,
+      questionStartedAt: session.questionStartedAt,
+      questionEndsAt: session.questionEndsAt,
     })
   })
 }

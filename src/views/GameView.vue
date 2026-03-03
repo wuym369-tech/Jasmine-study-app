@@ -67,6 +67,16 @@
         </span>
       </div>
 
+      <!-- Timer -->
+      <div class="mb-3 flex justify-center">
+        <div class="px-4 py-2 rounded-xl border text-sm font-bold tabular-nums"
+          :class="timeLeftSec <= 15 && timeLeftSec > 0 ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-white border-orange-200 text-orange-700'">
+          倒數：{{ timeLeftSec }} 秒
+          <span v-if="timeLeftSec <= 15 && timeLeftSec > 0" class="ml-2">（剩下 15 秒）</span>
+          <span v-else-if="timeLeftSec === 0" class="ml-2 text-red-700">（時間到）</span>
+        </div>
+      </div>
+
       <!-- 题目 -->
       <div class="bg-white rounded-2xl p-6 border border-orange-200 mb-4">
         <div class="flex items-center gap-2 mb-3">
@@ -83,7 +93,7 @@
       <div class="space-y-3 mb-4">
         <button v-for="opt in currentQuestion?.options" :key="opt.key"
           @click="submitAnswer(opt.key)"
-          :disabled="myAnswer !== null"
+          :disabled="myAnswer !== null || timeLeftSec === 0"
           class="w-full text-left px-5 py-4 rounded-xl border-2 font-medium transition-all"
           :class="getOptionClass(opt.key)">
           <span class="font-bold mr-2">{{ opt.key }}.</span>{{ opt.text }}
@@ -92,6 +102,12 @@
 
       <div v-if="myAnswer" class="text-center text-sm text-slate-500 bg-white rounded-xl py-3 border">
         ✅ 已作答，等待老师揭晓答案...
+      </div>
+      <div v-else-if="submitError" class="text-center text-sm text-red-700 bg-red-50 rounded-xl py-3 border border-red-200">
+        {{ submitError }}
+      </div>
+      <div v-else-if="timeLeftSec === 0" class="text-center text-sm text-red-700 bg-red-50 rounded-xl py-3 border border-red-200">
+        ⏱️ 本题时间到，无法再提交答案。
       </div>
     </div>
 
@@ -188,6 +204,7 @@ const teamCount = ref(0)
 const waitingTeams = ref([])
 const myScore = ref(0)
 const myAnswer = ref(null)
+const submitError = ref('')
 const questionIndex = ref(0)
 const questionTotal = ref(0)
 const currentQuestion = ref(null)
@@ -198,6 +215,29 @@ const partialText = ref(null)
 const partialExplanation = ref(null)
 const teamScores = ref([])
 const roundPoints = ref(0)
+const questionEndsAt = ref(null)
+const nowMs = ref(Date.now())
+let timerInterval = null
+
+const timeLeftSec = computed(() => {
+  if (!questionEndsAt.value) return 60
+  const left = Math.ceil((questionEndsAt.value - nowMs.value) / 1000)
+  return Math.max(0, left)
+})
+
+function startTimer() {
+  if (timerInterval) return
+  timerInterval = setInterval(() => {
+    nowMs.value = Date.now()
+  }, 250)
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+}
 
 function joinGame() {
   joinError.value = ''
@@ -230,6 +270,7 @@ function joinNextGame() {
 
 function submitAnswer(key) {
   if (myAnswer.value !== null) return
+  submitError.value = ''
   myAnswer.value = key
   socket.emit('team:submit_answer', {
     sessionId: sessionId.value,
@@ -297,10 +338,19 @@ socket.on('game:question_started', (data) => {
   correctAnswer.value = ''
   explanation.value = ''
   roundPoints.value = 0
+  questionEndsAt.value = data.questionEndsAt || null
+  nowMs.value = Date.now()
+  startTimer()
 })
 
 socket.on('team:answer_confirmed', () => {
   // answer is already set in myAnswer
+})
+
+socket.on('team:submit_error', (data) => {
+  submitError.value = data.message
+  // allow retry if the server rejected it
+  myAnswer.value = null
 })
 
 socket.on('game:answer_revealed', (data) => {
@@ -311,22 +361,13 @@ socket.on('game:answer_revealed', (data) => {
   partialText.value = data.partialText
   partialExplanation.value = data.partialExplanation
   teamScores.value = data.teamScores
+  stopTimer()
 
   // Calculate my round points
   const me = data.teamScores.find(t => t.teamId === teamId.value)
   if (me) myScore.value = me.totalScore
-  const prevScore = myScore.value
-  // roundPoints = totalScore change (rough estimate)
-  // We'll compute from myAnswer vs correctAnswer
-  if (!myAnswer.value) {
-    roundPoints.value = 0
-  } else if (myAnswer.value === data.correctAnswer) {
-    roundPoints.value = 3
-  } else {
-    // Check if partial (score=1 option)
-    // We don't have option scores client-side, approximate
-    roundPoints.value = 0
-  }
+  const rr = data.roundResults?.find(r => r.teamId === teamId.value)
+  roundPoints.value = rr?.points ?? 0
 })
 
 socket.on('game:waiting_next', () => {
@@ -336,14 +377,17 @@ socket.on('game:waiting_next', () => {
 socket.on('game:session_ended', (data) => {
   phase.value = 'ended'
   teamScores.value = data.finalScores
+  stopTimer()
 })
 
 onUnmounted(() => {
+  stopTimer()
   socket.off('team:join_error')
   socket.off('team:joined')
   socket.off('screen:teams_updated')
   socket.off('game:question_started')
   socket.off('team:answer_confirmed')
+  socket.off('team:submit_error')
   socket.off('game:answer_revealed')
   socket.off('game:waiting_next')
   socket.off('game:session_ended')

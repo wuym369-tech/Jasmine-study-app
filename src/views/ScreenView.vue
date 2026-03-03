@@ -16,7 +16,17 @@
       <div v-if="roomCode && phase === 'lobby'" class="mb-8">
         <p class="text-green-300 text-lg mb-2">房间代码</p>
         <div class="text-8xl font-black tracking-widest text-yellow-300 mb-4">{{ roomCode }}</div>
-        <p class="text-green-200 text-xl">打开浏览器访问 <span class="font-mono bg-white/10 px-3 py-1 rounded-lg">{{ gameUrl }}</span></p>
+        <div class="text-green-200 text-xl space-y-2">
+          <p>打开浏览器访问</p>
+          <div class="space-y-2">
+            <div v-for="u in gameUrls" :key="u" class="font-mono bg-white/10 px-3 py-1 rounded-lg inline-block">
+              {{ u }}
+            </div>
+          </div>
+          <p v-if="isLocalhost" class="text-amber-200 text-base">
+            若大屏是 `localhost`，手机打开 `localhost` 会连到手机自己；请优先使用局域网 IP 链接。
+          </p>
+        </div>
       </div>
       <div v-else class="mb-8">
         <p class="text-green-300 text-xl mb-4">等待老师创建场次...</p>
@@ -51,6 +61,26 @@
       <div class="flex items-center justify-between mb-6">
         <span class="text-green-300 text-xl">第 {{ currentIndex + 1 }} / {{ total }} 题</span>
         <span class="text-green-300">房间：{{ roomCode }}</span>
+      </div>
+
+      <!-- Timer -->
+      <div class="mb-6 text-center">
+        <div class="inline-flex items-center gap-4 rounded-2xl px-8 py-4 border"
+          :class="timeIsLow && timeLeftSec > 0 ? 'bg-amber-500/20 border-amber-300' : 'bg-white/10 border-white/20'">
+          <div class="text-6xl font-black tabular-nums"
+            :class="timeIsLow && timeLeftSec > 0 ? 'text-amber-200' : 'text-yellow-300'">
+            {{ timeLeftSec }}
+          </div>
+          <div class="text-left">
+            <div class="text-green-200 text-xl font-bold">倒數（秒）</div>
+            <div v-if="timeIsLow && timeLeftSec > 0" class="text-amber-200 font-semibold text-lg">
+              {{ questionHint }}
+            </div>
+            <div v-else-if="timeLeftSec === 0" class="text-red-200 font-semibold">
+              時間到
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Question -->
@@ -157,9 +187,48 @@ const partialAnswer = ref(null)
 const partialText = ref(null)
 const partialExplanation = ref(null)
 const answeredCount = ref(0)
+const questionEndsAt = ref(null)
+const nowMs = ref(Date.now())
+let timerInterval = null
 
-const gameUrl = computed(() => window.location.origin + '/game')
+const lanIps = ref([])
+const isLocalhost = computed(() => window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+const baseOrigins = computed(() => {
+  if (!isLocalhost.value) return [window.location.origin]
+  const port = window.location.port ? `:${window.location.port}` : ''
+  const proto = window.location.protocol
+  const candidates = lanIps.value.map(ip => `${proto}//${ip}${port}`)
+  return candidates.length > 0 ? candidates : [window.location.origin]
+})
+const gameUrls = computed(() => baseOrigins.value.map(o => o + '/game'))
 const maxScore = computed(() => Math.max(...teamScores.value.map(t => t.totalScore), 1))
+
+const timeLeftSec = computed(() => {
+  if (!questionEndsAt.value) return 60
+  const left = Math.ceil((questionEndsAt.value - nowMs.value) / 1000)
+  return Math.max(0, left)
+})
+
+const timeIsLow = computed(() => timeLeftSec.value <= 15)
+
+const questionHint = computed(() => {
+  // 優先使用題目自帶的15秒提示，若無則退回顯示角色分工
+  return currentQuestion.value?.hint15s || (currentQuestion.value?.roles?.join('／') || '注意「順序」與「時機」')
+})
+
+function startTimer() {
+  if (timerInterval) return
+  timerInterval = setInterval(() => {
+    nowMs.value = Date.now()
+  }, 250)
+}
+
+function stopTimerTick() {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+}
 
 function connectWithCode(rc) {
   roomCode.value = rc.toUpperCase()
@@ -190,6 +259,10 @@ socket.on('screen:state', (data) => {
   currentIndex.value = data.currentIndex
   total.value = data.total
   answeredCount.value = data.answeredCount || 0
+  questionEndsAt.value = data.questionEndsAt || null
+  nowMs.value = Date.now()
+  if (phase.value === 'question') startTimer()
+  else stopTimerTick()
 })
 
 socket.on('screen:no_session', () => {
@@ -215,6 +288,9 @@ socket.on('game:question_started', (data) => {
   answeredCount.value = 0
   correctAnswer.value = ''
   explanation.value = ''
+  questionEndsAt.value = data.questionEndsAt || null
+  nowMs.value = Date.now()
+  startTimer()
 })
 
 socket.on('screen:answer_progress', (data) => {
@@ -229,11 +305,13 @@ socket.on('game:answer_revealed', (data) => {
   partialText.value = data.partialText
   partialExplanation.value = data.partialExplanation
   teamScores.value = data.teamScores
+  stopTimerTick()
 })
 
 socket.on('game:session_ended', (data) => {
   phase.value = 'ended'
   teamScores.value = data.finalScores
+  stopTimerTick()
 })
 
 // Poll for room code from URL query param
@@ -243,10 +321,15 @@ onMounted(() => {
   if (rc) {
     connectWithCode(rc)
   }
+  fetch('/api/lan')
+    .then(r => r.ok ? r.json() : null)
+    .then(data => { lanIps.value = data?.ips || [] })
+    .catch(() => { lanIps.value = [] })
 })
 
 onUnmounted(() => {
   stopRetry()
+  stopTimerTick()
   socket.off('screen:state')
   socket.off('screen:no_session')
   socket.off('screen:teams_updated')
