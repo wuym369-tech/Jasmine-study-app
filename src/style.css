@@ -1,20 +1,65 @@
 @import "tailwindcss";
 
-/* 茉莉花主題自訂色彩 */
+/* ========== 高级配色系统 - 莫兰迪 + 中国传统色 ========== */
 @theme {
-  --color-jasmine-50: #f9fef5;
-  --color-jasmine-100: #edfcd8;
-  --color-jasmine-200: #d8f8b2;
-  --color-jasmine-300: #b8f07d;
-  --color-jasmine-400: #93e344;
-  --color-jasmine-500: #6fcb1e;
-  --color-jasmine-600: #54a213;
-  --color-jasmine-700: #407c12;
-  --color-jasmine-800: #356214;
-  --color-jasmine-900: #2e5215;
-  --color-cream-50: #fffef7;
-  --color-cream-100: #fffde8;
-  --color-cream-200: #fff9c4;
+  /* 主色调 - 竹青系列 (教学/主品牌) */
+  --color-bamboo-50: #F5F7F4;
+  --color-bamboo-100: #E8EDE8;
+  --color-bamboo-200: #D4E0D4;
+  --color-bamboo-300: #B8D4B8;
+  --color-bamboo-400: #7A9B7D;
+  --color-bamboo-500: #5B7A5E;
+  --color-bamboo-600: #3D5A40;
+  --color-bamboo-700: #2D3A2E;
+  
+  /* 琥珀系列 (讨论/温暖) */
+  --color-amber-50: #FDF9F0;
+  --color-amber-100: #FCF6E8;
+  --color-amber-200: #F5E6D3;
+  --color-amber-300: #E8D4B8;
+  --color-amber-400: #E0A84C;
+  --color-amber-500: #C88F34;
+  --color-amber-600: #A67C3D;
+  --color-amber-700: #7A5A2E;
+  
+  /* 珊瑚系列 (竞赛/活力) */
+  --color-coral-50: #FDF8F6;
+  --color-coral-100: #FCF0EB;
+  --color-coral-200: #F5DDD4;
+  --color-coral-300: #E8C4B8;
+  --color-coral-400: #E88B65;
+  --color-coral-500: #D4704A;
+  --color-coral-600: #B86645;
+  --color-coral-700: #8B4A32;
+  
+  /* 石墨系列 (控制台/专业) */
+  --color-stone-50: #F8F9FA;
+  --color-stone-100: #F1F3F5;
+  --color-stone-200: #E8EBF0;
+  --color-stone-300: #D1D8E0;
+  --color-stone-400: #64748B;
+  --color-stone-500: #4A5568;
+  --color-stone-600: #374151;
+  --color-stone-700: #2D3748;
+  
+  /* 中性色 */
+  --color-cream-50: #FDFCF8;
+  --color-cream-100: #F8F7F4;
+  --color-cream-200: #F0EDE8;
+  --color-cream-300: #E8E4DE;
+  --color-cream-400: #B8B5B0;
+  
+  /* 保留原有的 jasmine 系列兼容 */
+  --color-jasmine-50: #F5F7F4;
+  --color-jasmine-100: #E8EDE8;
+  --color-jasmine-200: #D4E0D4;
+  --color-jasmine-300: #B8D4B8;
+  --color-jasmine-400: #7A9B7D;
+  --color-jasmine-500: #5B7A5E;
+  --color-jasmine-600: #3D5A40;
+  --color-jasmine-700: #2D3A2E;
+  --color-jasmine-800: #2D3A2E;
+  --color-jasmine-900: #1A221B;
 }
 
 * {
@@ -24,7 +69,20 @@
 }
 
 body {
-  font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans TC', sans-serif;
-  background-color: #f9fef5;
-  color: #2e5215;
+  font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #FDFCF8;
+  color: #2D3A2E;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 全局平滑滚动 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 选中文字样式 */
+::selection {
+  background-color: rgba(123, 163, 126, 0.25);
+  color: #2D3A2E;
 }

@@ -130,14 +130,57 @@ export function buildTeamScores(session) {
     .sort((a, b) => b.totalScore - a.totalScore)
 }
 
-export function endSession(session) {
+export function endSession(session, { scenarios } = {}) {
   session.phase = 'ended'
   const sessionId = session.sessionId
   const roomCode = session.roomCode
+
+  // Build detailed review data for each team
+  const teamReviews = {}
+  for (const [teamId, team] of Object.entries(session.teams)) {
+    const review = []
+    for (let i = 0; i < session.questionIds.length; i++) {
+      const qId = session.questionIds[i]
+      const q = scenarios?.find(s => s.id === qId)
+      const answerData = team.answers[i]
+
+      if (q && answerData) {
+        const isCorrect = answerData.basePoints === 3
+        const isPartial = answerData.basePoints === 1
+        const isWrong = answerData.basePoints === 0
+
+        if (isWrong || isPartial) {
+          review.push({
+            questionIndex: i + 1,
+            questionId: q.id,
+            title: q.title,
+            scenario: q.scenario,
+            categoryLabel: q.categoryLabel,
+            icon: q.icon,
+            yourAnswer: answerData.answer,
+            yourAnswerText: q.options.find(o => o.key === answerData.answer)?.text || '未作答',
+            correctAnswer: q.answer,
+            correctAnswerText: q.options.find(o => o.key === q.answer)?.text || '',
+            explanation: q.explanation,
+            partialExplanation: q.partialExplanation,
+            isPartial: isPartial,
+            timeBonus: answerData.timeBonus,
+            basePoints: answerData.basePoints,
+          })
+        }
+      }
+    }
+    teamReviews[teamId] = review
+  }
+
   // Clean up room code mapping after a delay
   setTimeout(() => {
     delete roomCodes[roomCode]
     delete sessions[sessionId]
   }, 60 * 60 * 1000) // keep for 1 hour then cleanup
-  return buildTeamScores(session)
+
+  return {
+    teamScores: buildTeamScores(session),
+    teamReviews,
+  }
 }

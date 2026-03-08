@@ -1,52 +1,52 @@
 <template>
-  <div class="space-y-10">
+  <div class="growth-container">
 
     <!-- 全年周期概览 -->
-    <section>
+    <section class="content-section">
       <h2 class="section-title">📅 全年管理周期</h2>
-      <div class="space-y-3">
+      <div class="months-list">
         <div
           v-for="m in monthlyGrowth" :key="m.month"
-          class="rounded-2xl border-2 overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-md"
+          class="month-card"
           :class="m.color"
           @click="selected = selected === m.month ? null : m.month"
         >
           <!-- 标题栏 -->
-          <div class="flex items-center gap-4 p-4">
-            <span class="text-3xl">{{ m.icon }}</span>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="font-bold text-gray-800">{{ m.month }}</span>
-                <span class="text-xs px-2 py-0.5 rounded-full font-medium" :class="m.badge">{{ m.status }}</span>
+          <div class="month-header">
+            <span class="month-icon">{{ m.icon }}</span>
+            <div class="month-info">
+              <div class="month-title-row">
+                <span class="month-name">{{ m.month }}</span>
+                <span class="month-badge" :class="m.badge">{{ m.status }}</span>
               </div>
-              <p class="text-xs text-gray-500 mt-0.5">{{ m.season }} · 气温 {{ m.temp }}</p>
+              <p class="month-meta">{{ m.season }} · 气温 {{ m.temp }}</p>
             </div>
-            <span class="text-gray-400 text-sm flex-shrink-0">{{ selected === m.month ? '▲' : '▼' }}</span>
+            <span class="month-toggle">{{ selected === m.month ? '▲' : '▼' }}</span>
           </div>
 
           <!-- 展开详情 -->
-          <div v-if="selected === m.month" class="px-4 pb-4 border-t border-gray-200 pt-3 space-y-3">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div class="bg-white bg-opacity-70 rounded-xl p-3">
-                <div class="text-xs font-bold text-blue-700 mb-2">💧 浇水</div>
-                <p class="text-xs text-gray-700">{{ m.water }}</p>
+          <div v-if="selected === m.month" class="month-details">
+            <div class="details-grid">
+              <div class="detail-box water-box">
+                <div class="detail-label">💧 浇水</div>
+                <p class="detail-text">{{ m.water }}</p>
               </div>
-              <div class="bg-white bg-opacity-70 rounded-xl p-3">
-                <div class="text-xs font-bold text-green-700 mb-2">🌿 施肥</div>
-                <p class="text-xs text-gray-700">{{ m.fertilizer }}</p>
+              <div class="detail-box fertilizer-box">
+                <div class="detail-label">🌿 施肥</div>
+                <p class="detail-text">{{ m.fertilizer }}</p>
               </div>
             </div>
-            <div class="bg-white bg-opacity-70 rounded-xl p-3">
-              <div class="text-xs font-bold text-gray-700 mb-2">📋 本月重要工作</div>
-              <ul class="space-y-1">
-                <li v-for="task in m.tasks" :key="task" class="text-xs text-gray-700 flex gap-2">
-                  <span class="text-green-500 flex-shrink-0">✓</span>{{ task }}
+            <div class="detail-box tasks-box">
+              <div class="detail-label">📋 本月重要工作</div>
+              <ul class="task-list">
+                <li v-for="task in m.tasks" :key="task" class="task-item">
+                  <span class="task-check">✓</span>{{ task }}
                 </li>
               </ul>
             </div>
-            <div v-if="m.warning" class="bg-red-50 rounded-xl p-3 flex gap-2">
-              <span class="text-red-500 flex-shrink-0">⚠️</span>
-              <p class="text-xs text-red-700">{{ m.warning }}</p>
+            <div v-if="m.warning" class="warning-box">
+              <span class="warning-icon">⚠️</span>
+              <p class="warning-text">{{ m.warning }}</p>
             </div>
           </div>
         </div>
@@ -54,65 +54,61 @@
     </section>
 
     <!-- 生长里程碑 -->
-    <section>
+    <section class="content-section">
       <h2 class="section-title">🏁 从种植到采收 — 生长里程碑</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div v-for="(m, i) in growthMilestones" :key="m.phase"
-          class="bg-white rounded-xl border border-green-100 p-4 flex gap-4">
-          <div class="flex flex-col items-center">
-            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-xl flex-shrink-0">
-              {{ m.icon }}
-            </div>
-            <div v-if="i < growthMilestones.length - 1" class="w-0.5 bg-green-200 flex-1 my-1"></div>
+      <div class="milestones-grid">
+        <div v-for="(m, i) in growthMilestones" :key="m.phase" class="milestone-card">
+          <div class="milestone-connector" v-if="i < growthMilestones.length - 1">
+            <div class="milestone-dot">{{ m.icon }}</div>
+            <div class="milestone-line"></div>
           </div>
-          <div class="flex-1">
-            <div class="font-bold text-green-800 text-sm">{{ m.phase }}</div>
-            <div class="text-xs text-green-500 mb-1">{{ m.days }}</div>
-            <p class="text-xs text-gray-600">{{ m.desc }}</p>
+          <div class="milestone-dot" v-else>{{ m.icon }}</div>
+          <div class="milestone-content">
+            <div class="milestone-phase">{{ m.phase }}</div>
+            <div class="milestone-days">{{ m.days }}</div>
+            <p class="milestone-desc">{{ m.desc }}</p>
           </div>
         </div>
       </div>
     </section>
 
     <!-- 修剪指南 -->
-    <section>
+    <section class="content-section">
       <h2 class="section-title">✂️ 修剪管理指南</h2>
-      <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4 text-xs text-yellow-800">
+      <div class="pruning-tip">
         💡 茉莉花每条新枝只开一次花，<strong>修剪的好坏直接决定一年能开几批花</strong>。正确修剪可确保每年开三批！
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div v-for="guide in pruningGuide" :key="guide.name"
-          class="rounded-2xl border-2 p-5" :class="guide.color">
-          <div class="text-3xl text-center mb-2">{{ guide.icon }}</div>
-          <h3 class="font-bold text-center text-gray-800 mb-1">{{ guide.name }}</h3>
-          <div class="text-xs text-center text-gray-500 mb-1">{{ guide.timing }}</div>
-          <div class="text-xs text-center font-medium text-green-700 mb-3 bg-white bg-opacity-60 rounded-full py-1">
-            {{ guide.importance }}
-          </div>
-          <ol class="space-y-1.5">
-            <li v-for="(step, i) in guide.steps" :key="i" class="text-xs text-gray-700 flex gap-2">
-              <span class="w-4 h-4 bg-white rounded-full flex items-center justify-center text-green-600 font-bold flex-shrink-0 text-xs">{{ i+1 }}</span>
-              {{ step }}
+      <div class="pruning-grid">
+        <div v-for="guide in pruningGuide" :key="guide.name" class="pruning-card" :class="guide.color">
+          <div class="pruning-icon">{{ guide.icon }}</div>
+          <h3 class="pruning-name">{{ guide.name }}</h3>
+          <div class="pruning-timing">{{ guide.timing }}</div>
+          <div class="pruning-importance">{{ guide.importance }}</div>
+          <ol class="pruning-steps">
+            <li v-for="(step, i) in guide.steps" :key="i" class="step-item">
+              <span class="step-number">{{ i+1 }}</span>{{ step }}
             </li>
           </ol>
         </div>
       </div>
     </section>
 
-    <!-- 温度需求速查 -->
-    <section>
-      <h2 class="section-title">🌡️ 温度需求速查</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div v-for="t in tempGuide" :key="t.label"
-          class="flex items-center gap-3 bg-white rounded-xl p-4 border" :class="t.border">
-          <span class="text-2xl">{{ t.icon }}</span>
-          <div>
-            <div class="font-medium text-sm" :class="t.textColor">{{ t.temp }}</div>
-            <div class="text-xs text-gray-500">{{ t.label }}</div>
+    <!--
+    TODO: 病虫害日历 - 待添加 pestCalendar 数据后显示
+    <section class="content-section">
+      <h2 class="section-title">🐛 全年病虫害日历</h2>
+      <div class="pest-calendar">
+        <div v-for="p in pestCalendar" :key="p.pest" class="pest-item">
+          <div class="pest-icon">{{ p.icon }}</div>
+          <div class="pest-content">
+            <div class="pest-name">{{ p.pest }}</div>
+            <div class="pest-season">{{ p.season }}</div>
+            <p class="pest-desc">{{ p.desc }}</p>
           </div>
         </div>
       </div>
     </section>
+    -->
 
   </div>
 </template>
@@ -122,20 +118,400 @@ import { ref } from 'vue'
 import { monthlyGrowth, growthMilestones, pruningGuide } from '../../data/learnContent.js'
 
 const selected = ref(null)
-
-const tempGuide = [
-  { temp: '32-37°C', label: '花蕾发育最快，香气最浓', icon: '🔥', border: 'border-red-200', textColor: 'text-red-600' },
-  { temp: '25-35°C', label: '最适合生长和开花的温度范围', icon: '☀️', border: 'border-yellow-200', textColor: 'text-yellow-600' },
-  { temp: '20°C+', label: '花蕾开始形成的最低温度', icon: '🌤️', border: 'border-green-200', textColor: 'text-green-600' },
-  { temp: '10°C以下', label: '生长基本停止，进入休眠', icon: '🌡️', border: 'border-blue-200', textColor: 'text-blue-600' },
-  { temp: '3-5°C', label: '叶片开始受损，需紧急保护', icon: '❄️', border: 'border-indigo-200', textColor: 'text-indigo-600' },
-  { temp: '0°C以下', label: '枝条严重受损，可能整株死亡', icon: '🥶', border: 'border-purple-200', textColor: 'text-purple-600' },
-]
 </script>
 
 <style scoped>
 @reference "tailwindcss";
-.section-title {
-  @apply text-xl font-bold text-green-800 mb-4;
+
+.growth-container {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  padding: 8px 0 32px;
 }
+
+.content-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #5B7A5E;
+  letter-spacing: -0.02em;
+}
+
+/* 月份列表 - 更寬鬆 */
+.months-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.month-card {
+  border-radius: 20px;
+  border: 2px solid;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+  background: white;
+}
+
+.month-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.month-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+}
+
+.month-icon {
+  font-size: 40px;
+}
+
+.month-info {
+  flex: 1;
+}
+
+.month-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.month-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.month-badge {
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.month-meta {
+  font-size: 15px;
+  color: #8B7355;
+}
+
+.month-toggle {
+  font-size: 18px;
+  color: #64748B;
+  padding: 8px;
+}
+
+/* 月份詳情 */
+.month-details {
+  padding: 0 24px 24px;
+  border-top: 1px dashed rgba(139, 115, 85, 0.2);
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .details-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.detail-box {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.detail-label {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.water-box .detail-label { color: #3B82F6; }
+.fertilizer-box .detail-label { color: #16A34A; }
+
+.detail-text {
+  font-size: 15px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.task-item {
+  font-size: 15px;
+  color: #374151;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.task-check {
+  color: #22C55E;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.warning-box {
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.warning-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.warning-text {
+  font-size: 15px;
+  color: #DC2626;
+  line-height: 1.6;
+}
+
+/* 里程碑 - 更寬鬆 */
+.milestones-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .milestones-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.milestone-card {
+  background: white;
+  border-radius: 20px;
+  border: 1px solid rgba(139, 115, 85, 0.1);
+  padding: 28px;
+  display: flex;
+  gap: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.milestone-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.milestone-dot {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(91, 122, 94, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.milestone-line {
+  width: 3px;
+  flex: 1;
+  background: linear-gradient(to bottom, #7A9B7D, #C8B28C);
+  margin: 8px 0;
+}
+
+.milestone-content {
+  flex: 1;
+}
+
+.milestone-phase {
+  font-size: 20px;
+  font-weight: 700;
+  color: #5B7A5E;
+  margin-bottom: 6px;
+}
+
+.milestone-days {
+  font-size: 15px;
+  color: #7A9B7D;
+  margin-bottom: 10px;
+}
+
+.milestone-desc {
+  font-size: 16px;
+  color: #64748B;
+  line-height: 1.7;
+}
+
+/* 修剪指南 */
+.pruning-tip {
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 16px;
+  padding: 20px 24px;
+  font-size: 16px;
+  color: #92400E;
+  line-height: 1.7;
+}
+
+.pruning-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .pruning-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.pruning-card {
+  border-radius: 24px;
+  border: 2px solid;
+  padding: 32px 28px;
+  background: white;
+}
+
+.pruning-icon {
+  font-size: 48px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.pruning-name {
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  color: #374151;
+  margin-bottom: 10px;
+}
+
+.pruning-timing {
+  font-size: 15px;
+  text-align: center;
+  color: #64748B;
+  margin-bottom: 12px;
+}
+
+.pruning-importance {
+  font-size: 14px;
+  text-align: center;
+  font-weight: 600;
+  color: #5B7A5E;
+  background: rgba(91, 122, 94, 0.1);
+  padding: 10px 16px;
+  border-radius: 20px;
+  margin-bottom: 24px;
+}
+
+.pruning-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.step-item {
+  font-size: 15px;
+  color: #374151;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  line-height: 1.6;
+}
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  background: rgba(91, 122, 94, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #5B7A5E;
+  flex-shrink: 0;
+}
+
+/* 病虫害日历 */
+.pest-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pest-item {
+  background: white;
+  border-radius: 20px;
+  border: 1px solid rgba(139, 115, 85, 0.1);
+  padding: 24px;
+  display: flex;
+  gap: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.pest-icon {
+  font-size: 40px;
+  flex-shrink: 0;
+}
+
+.pest-content {
+  flex: 1;
+}
+
+.pest-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.pest-season {
+  font-size: 14px;
+  color: #DC2626;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.pest-desc {
+  font-size: 15px;
+  color: #64748B;
+  line-height: 1.7;
+}
+
+/* 保留原有的顏色類 */
+.border-green-200 { border-color: rgba(34, 197, 94, 0.3); }
+.border-yellow-200 { border-color: rgba(234, 179, 8, 0.3); }
+.border-orange-200 { border-color: rgba(251, 146, 60, 0.3); }
+.border-blue-200 { border-color: rgba(59, 130, 246, 0.3); }
+.border-purple-200 { border-color: rgba(168, 85, 247, 0.3); }
+.border-red-200 { border-color: rgba(239, 68, 68, 0.3); }
+.bg-green-100 { background-color: rgba(34, 197, 94, 0.1); }
+.bg-yellow-100 { background-color: rgba(234, 179, 8, 0.1); }
+.bg-orange-100 { background-color: rgba(251, 146, 60, 0.1); }
+.bg-blue-100 { background-color: rgba(59, 130, 246, 0.1); }
+.bg-purple-100 { background-color: rgba(168, 85, 247, 0.1); }
+.bg-red-100 { background-color: rgba(239, 68, 68, 0.1); }
 </style>

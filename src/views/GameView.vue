@@ -1,194 +1,240 @@
 <template>
-  <div class="min-h-screen bg-orange-50 p-6">
-
-    <!-- Phase: join -->
-    <div v-if="phase === 'join'" class="max-w-md mx-auto pt-12">
-      <div class="text-center mb-8">
-        <div class="text-5xl mb-3">🌸</div>
-        <h1 class="text-2xl font-bold text-orange-800">茉莉花农场竞赛</h1>
-        <p class="text-orange-600 text-sm mt-1">输入房间代码加入你们的队伍</p>
+  <div class="game-container">
+    <div class="game-bg"></div>
+    
+    <!-- ========== Join Phase ========== -->
+    <div v-if="phase === 'join'" class="game-content">
+      <div class="join-header">
+        <div class="join-icon">
+          <JasmineIcons name="jasmine" :size="64" />
+        </div>
+        <h1 class="join-title">茉莉花农场竞赛</h1>
+        <p class="join-subtitle">输入房间代码加入你们的队伍</p>
       </div>
 
-      <div class="bg-white rounded-2xl p-6 border border-orange-200 space-y-4">
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1">房间代码</label>
+      <div class="join-card">
+        <div class="input-group">
+          <label class="input-label">房间代码</label>
           <input v-model="roomCodeInput"
             @input="roomCodeInput = roomCodeInput.toUpperCase()"
             maxlength="6"
             placeholder="如：ROSE42"
-            class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-orange-400 outline-none font-mono text-xl text-center tracking-widest uppercase" />
+            class="input-field input-code" />
         </div>
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1">队伍名称</label>
+        
+        <div class="input-group">
+          <label class="input-label">队伍名称</label>
           <input v-model="teamNameInput"
             maxlength="20"
             placeholder="如：第一组"
-            class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-orange-400 outline-none" />
+            class="input-field" />
         </div>
-        <div v-if="joinError" class="text-red-600 text-sm text-center bg-red-50 rounded-lg py-2">{{ joinError }}</div>
+
+        <div v-if="joinError" class="error-message">{{ joinError }}</div>
+        
         <button @click="joinGame"
           :disabled="!roomCodeInput || !teamNameInput"
-          class="w-full py-3 font-bold rounded-xl text-lg transition-colors"
-          :class="roomCodeInput && teamNameInput
-            ? 'bg-orange-500 text-white hover:bg-orange-600'
-            : 'bg-slate-200 text-slate-400 cursor-not-allowed'">
+          class="join-btn"
+          :class="{ 'join-btn-disabled': !roomCodeInput || !teamNameInput }">
           加入竞赛 →
         </button>
       </div>
     </div>
 
-    <!-- Phase: waiting -->
-    <div v-else-if="phase === 'waiting'" class="max-w-md mx-auto pt-12 text-center">
-      <div class="text-5xl mb-4 animate-pulse">🌸</div>
-      <h1 class="text-2xl font-bold text-orange-800 mb-2">已加入！等待开始</h1>
-      <div class="bg-white rounded-2xl p-6 border border-orange-200 mb-4">
-        <p class="text-slate-500 text-sm mb-1">你的队伍</p>
-        <p class="text-2xl font-bold text-orange-700">{{ teamName }}</p>
+    <!-- ========== Waiting Phase ========== -->
+    <div v-else-if="phase === 'waiting'" class="game-content center">
+      <div class="waiting-icon">
+        <JasmineIcons name="jasmine" :size="80" class="pulse-animation" />
       </div>
-      <p class="text-slate-500 text-sm">目前已有 {{ teamCount }} 支队伍加入，等待老师开始...</p>
+      <h2 class="waiting-title">已加入！等待开始</h2>
+      
+      <div class="team-badge">
+        <span class="badge-label">你的队伍</span>
+        <span class="badge-name">{{ teamName }}</span>
+      </div>
+      
+      <p class="waiting-text">目前已有 {{ teamCount }} 支队伍加入</p>
 
-      <!-- 各队列表实时更新 -->
-      <div v-if="waitingTeams.length > 0" class="mt-4 bg-white rounded-2xl p-4 border border-orange-100">
-        <div class="grid grid-cols-2 gap-2">
-          <div v-for="t in waitingTeams" :key="t.teamId"
-            class="bg-orange-50 rounded-lg py-2 px-3 text-sm font-medium text-orange-800">
-            {{ t.teamName }}
-          </div>
+      <div v-if="waitingTeams.length > 0" class="teams-preview">
+        <div v-for="t in waitingTeams" :key="t.teamId" class="preview-item">
+          {{ t.teamName }}
         </div>
       </div>
     </div>
 
-    <!-- Phase: question -->
-    <div v-else-if="phase === 'question'" class="max-w-2xl mx-auto">
-      <div class="flex items-center justify-between mb-4">
-        <span class="text-sm text-slate-500">第 {{ questionIndex + 1 }} / {{ questionTotal }} 题</span>
-        <span class="font-bold text-orange-700 bg-orange-100 px-3 py-1 rounded-full text-sm">
-          {{ teamName }} · {{ myScore }} 分
-        </span>
+    <!-- ========== Question Phase ========== -->
+    <div v-else-if="phase === 'question'" class="game-content">
+      <!-- Header -->
+      <div class="game-header">
+        <div class="progress-info">
+          <span>第 {{ questionIndex + 1 }} / {{ questionTotal }} 题</span>
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: (questionIndex / questionTotal * 100) + '%' }"></div>
+          </div>
+        </div>
+        <div class="score-badge">
+          <span class="score-team">{{ teamName }}</span>
+          <AnimatedNumber :value="myScore" suffix=" 分" />
+        </div>
       </div>
 
       <!-- Timer -->
-      <div class="mb-3 flex justify-center">
-        <div class="px-4 py-2 rounded-xl border text-sm font-bold tabular-nums"
-          :class="timeLeftSec <= 15 && timeLeftSec > 0 ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-white border-orange-200 text-orange-700'">
-          倒數：{{ timeLeftSec }} 秒
-          <span v-if="timeLeftSec <= 15 && timeLeftSec > 0" class="ml-2">（剩下 15 秒）</span>
-          <span v-else-if="timeLeftSec === 0" class="ml-2 text-red-700">（時間到）</span>
+      <div class="timer-display" :class="{ 'timer-warning': timeLeftSec <= 15 && timeLeftSec > 0, 'timer-ended': timeLeftSec === 0 }">
+        <div class="timer-circle">
+          <svg class="timer-svg" viewBox="0 0 36 36">
+            <path class="timer-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <path class="timer-progress" :stroke-dasharray="(timeLeftSec / 60 * 100) + ', 100'" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+          </svg>
+          <span class="timer-value">{{ timeLeftSec }}</span>
         </div>
+        <span class="timer-label">{{ timeLeftSec === 0 ? '时间到' : timeLeftSec <= 15 ? '剩余15秒' : '倒数计时' }}</span>
       </div>
 
-      <!-- 题目 -->
-      <div class="bg-white rounded-2xl p-6 border border-orange-200 mb-4">
-        <div class="flex items-center gap-2 mb-3">
-          <span class="text-2xl">{{ currentQuestion?.icon }}</span>
-          <span class="text-sm px-2 py-0.5 rounded-full font-medium" :class="currentQuestion?.categoryColor">
-            {{ currentQuestion?.categoryLabel }}
-          </span>
+      <!-- Question -->
+      <div class="question-panel">
+        <div class="question-meta">
+          <span class="question-category">{{ currentQuestion?.categoryLabel }}</span>
         </div>
-        <h2 class="font-bold text-lg text-slate-800 mb-3">{{ currentQuestion?.title }}</h2>
-        <p class="text-slate-600 text-sm leading-relaxed">{{ currentQuestion?.scenario }}</p>
+        <h2 class="question-title">{{ currentQuestion?.title }}</h2>
+        <p class="question-scenario">{{ currentQuestion?.scenario }}</p>
       </div>
 
-      <!-- 选项 -->
-      <div class="space-y-3 mb-4">
+      <!-- Options -->
+      <div class="options-list">
         <button v-for="opt in currentQuestion?.options" :key="opt.key"
           @click="submitAnswer(opt.key)"
           :disabled="myAnswer !== null || timeLeftSec === 0"
-          class="w-full text-left px-5 py-4 rounded-xl border-2 font-medium transition-all"
+          class="option-btn"
           :class="getOptionClass(opt.key)">
-          <span class="font-bold mr-2">{{ opt.key }}.</span>{{ opt.text }}
+          <span class="option-key">{{ opt.key }}</span>
+          <span class="option-text">{{ opt.text }}</span>
         </button>
       </div>
 
-      <div v-if="myAnswer" class="text-center text-sm text-slate-500 bg-white rounded-xl py-3 border">
-        ✅ 已作答，等待老师揭晓答案...
+      <!-- Status -->
+      <div v-if="myAnswer" class="status-message success">
+        ✓ 已作答，等待老师揭晓答案...
       </div>
-      <div v-else-if="submitError" class="text-center text-sm text-red-700 bg-red-50 rounded-xl py-3 border border-red-200">
+      <div v-else-if="submitError" class="status-message error">
         {{ submitError }}
       </div>
-      <div v-else-if="timeLeftSec === 0" class="text-center text-sm text-red-700 bg-red-50 rounded-xl py-3 border border-red-200">
+      <div v-else-if="timeLeftSec === 0" class="status-message error">
         ⏱️ 本题时间到，无法再提交答案。
       </div>
     </div>
 
-    <!-- Phase: revealed -->
-    <div v-else-if="phase === 'revealed'" class="max-w-2xl mx-auto">
-      <div class="flex items-center justify-between mb-4">
-        <span class="text-sm text-slate-500">第 {{ questionIndex + 1 }} / {{ questionTotal }} 题 — 揭晓</span>
+    <!-- ========== Revealed Phase ========== -->
+    <div v-else-if="phase === 'revealed'" class="game-content">
+      <div class="phase-indicator">
+        <span>第 {{ questionIndex + 1 }} / {{ questionTotal }} 题 — 揭晓</span>
       </div>
 
-      <!-- 结果 -->
-      <div class="rounded-2xl p-6 border-2 mb-4 text-center"
-        :class="roundResult === 'correct' ? 'bg-green-50 border-green-300'
-          : roundResult === 'partial' ? 'bg-yellow-50 border-yellow-300'
-          : roundResult === 'wrong' ? 'bg-red-50 border-red-300'
-          : 'bg-slate-50 border-slate-200'">
-        <div class="text-4xl mb-2">{{ roundResultIcon }}</div>
-        <div class="font-bold text-xl mb-1" :class="roundResultColor">{{ roundResultText }}</div>
-        <div class="text-sm text-slate-500">本题得 {{ roundPoints }} 分 · 总分 {{ myScore }} 分</div>
+      <!-- Result -->
+      <div class="result-panel" :class="`result-${roundResult}`">
+        <div class="result-icon">{{ roundResultIcon }}</div>
+        <div class="result-text">{{ roundResultText }}</div>
+        <div class="result-score">本题得 {{ roundPoints }} 分 · 总分 {{ myScore }} 分</div>
       </div>
 
-      <!-- 正确答案 -->
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 mb-4">
-        <div class="font-bold text-green-700 mb-2">✅ 正确答案：{{ correctAnswer }}</div>
-        <p class="text-slate-600 text-sm leading-relaxed">{{ explanation }}</p>
+      <!-- Answer -->
+      <div class="answer-panel">
+        <div class="answer-label">正确答案</div>
+        <div class="answer-value">{{ correctAnswer }}</div>
+        <p class="answer-explanation">{{ explanation }}</p>
       </div>
 
-      <!-- 次佳答案说明 -->
-      <div v-if="partialAnswer && partialExplanation" class="bg-amber-50 rounded-2xl p-5 border border-amber-200 mb-4">
-        <div class="font-bold text-amber-700 mb-1">⚡ 次佳答案（1分）：{{ partialAnswer }}. {{ partialText }}</div>
-        <p class="text-amber-800 text-sm leading-relaxed mt-2">{{ partialExplanation }}</p>
+      <!-- Partial Answer -->
+      <div v-if="partialAnswer" class="partial-panel">
+        <div class="partial-label">次佳答案（1分）</div>
+        <div class="partial-value">{{ partialAnswer }}. {{ partialText }}</div>
+        <p class="partial-explanation">{{ partialExplanation }}</p>
       </div>
 
-      <!-- 积分榜 -->
-      <div class="bg-white rounded-2xl p-5 border border-slate-200">
-        <h3 class="font-semibold text-slate-700 mb-3">当前排名</h3>
-        <div class="space-y-2">
+      <!-- Leaderboard -->
+      <div class="leaderboard-panel">
+        <h3 class="leaderboard-title">当前排名</h3>
+        <div class="leaderboard-list">
           <div v-for="(team, i) in teamScores" :key="team.teamId"
-            class="flex items-center gap-3 py-2 rounded-lg px-3"
-            :class="team.teamId === teamId ? 'bg-orange-50' : ''">
-            <span class="font-bold w-6 text-center text-slate-400">{{ i + 1 }}</span>
-            <span class="flex-1 font-medium" :class="team.teamId === teamId ? 'text-orange-800 font-bold' : 'text-slate-700'">
-              {{ team.teamName }} {{ team.teamId === teamId ? '👈' : '' }}
-            </span>
-            <span class="font-bold text-green-700">{{ team.totalScore }} 分</span>
+            class="leaderboard-item"
+            :class="{ 'is-me': team.teamId === teamId, 'top-three': i < 3 }">
+            <span class="item-rank">{{ i + 1 }}</span>
+            <span class="item-name">{{ team.teamName }} {{ team.teamId === teamId ? '👈' : '' }}</span>
+            <AnimatedNumber :value="team.totalScore" suffix=" 分" class="item-score" />
           </div>
         </div>
       </div>
 
-      <div class="mt-4 text-center text-sm text-slate-400">等待老师进入下一题...</div>
+      <div class="waiting-hint">等待老师进入下一题...</div>
     </div>
 
-    <!-- Phase: ended -->
-    <div v-else-if="phase === 'ended'" class="max-w-md mx-auto pt-8 text-center">
-      <div class="text-5xl mb-4">🏆</div>
-      <h1 class="text-2xl font-bold text-slate-800 mb-6">竞赛结束！</h1>
-      <div class="bg-white rounded-2xl p-6 border border-slate-200 mb-6">
-        <div class="space-y-3">
-          <div v-for="(team, i) in teamScores" :key="team.teamId"
-            class="flex items-center gap-3 p-3 rounded-xl"
-            :class="team.teamId === teamId ? 'bg-orange-100 border-2 border-orange-300' : 'bg-slate-50'">
-            <span class="text-2xl">{{ i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '' }}</span>
-            <span class="flex-1 font-semibold" :class="team.teamId === teamId ? 'text-orange-800' : 'text-slate-700'">
-              {{ team.teamName }}
-            </span>
-            <span class="font-black text-green-700">{{ team.totalScore }} 分</span>
+    <!-- ========== Ended Phase ========== -->
+    <div v-else-if="phase === 'ended'" class="game-content center">
+      <div class="ended-icon">🏆</div>
+      <h2 class="ended-title">竞赛结束！</h2>
+      
+      <!-- Final Rankings -->
+      <div class="final-leaderboard">
+        <div v-for="(team, i) in teamScores" :key="team.teamId"
+          class="final-item"
+          :class="{ 'is-me': team.teamId === teamId, 'champion': i === 0 }">
+          <span class="final-rank">{{ i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1 }}</span>
+          <span class="final-name">{{ team.teamName }} {{ team.teamId === teamId ? '👈' : '' }}</span>
+          <span class="final-score">{{ team.totalScore }} 分</span>
+        </div>
+      </div>
+
+      <!-- Review -->
+      <div v-if="myReview && myReview.length > 0" class="review-section">
+        <h3 class="review-title">
+          <span>📝</span> 错题回顾
+          <span class="review-count">{{ myReview.length }} 题</span>
+        </h3>
+        <div class="review-list-compact">
+          <div v-for="(item, idx) in myReview" :key="idx" class="review-card">
+            <div class="review-header">
+              <span class="review-cat">{{ item.categoryLabel }}</span>
+              <span class="review-idx">第 {{ item.questionIndex }} 题</span>
+            </div>
+            <div class="review-body">
+              <h4 class="review-q">{{ item.title }}</h4>
+              <div class="review-answers">
+                <div class="your-ans" :class="{ partial: item.isPartial }">
+                  你的答案：{{ item.yourAnswer }}. {{ item.yourAnswerText }}
+                  <span v-if="item.isPartial" class="partial-badge">次佳答案</span>
+                  <span v-else class="wrong-badge">错误</span>
+                </div>
+                <div class="correct-ans">
+                  正确答案：{{ item.correctAnswer }}. {{ item.correctAnswerText }}
+                </div>
+              </div>
+              <p class="review-tip">{{ item.isPartial ? item.partialExplanation : item.explanation }}</p>
+            </div>
           </div>
         </div>
       </div>
-      <div class="text-slate-500 text-sm mb-6">感谢参与茉莉花研学活动！</div>
-      <button @click="joinNextGame"
-        class="w-full py-3 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 transition-colors text-lg">
-        参加下一场 →
-      </button>
-    </div>
 
+      <!-- All Correct -->
+      <div v-else class="all-correct">
+        <div class="correct-icon">🎉</div>
+        <h3>太棒了！全部答对！</h3>
+        <p>所有题目都选择了最佳答案</p>
+      </div>
+
+      <div class="ended-footer">
+        <p class="thanks">感谢参与茉莉花研学活动！</p>
+        <button @click="joinNextGame" class="next-game-btn">
+          参加下一场 →
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
 import { useSocket } from '../composables/useSocket.js'
+import JasmineIcons from '../components/JasmineIcons.vue'
+import AnimatedNumber from '../components/AnimatedNumber.vue'
 
 const { socket } = useSocket()
 
@@ -216,6 +262,7 @@ const partialExplanation = ref(null)
 const teamScores = ref([])
 const roundPoints = ref(0)
 const questionEndsAt = ref(null)
+const myReview = ref([])
 const nowMs = ref(Date.now())
 let timerInterval = null
 
@@ -252,6 +299,7 @@ function joinNextGame() {
   roomCodeInput.value = ''
   teamNameInput.value = ''
   joinError.value = ''
+  submitError.value = ''
   teamId.value = null
   teamName.value = ''
   sessionId.value = null
@@ -266,6 +314,7 @@ function joinNextGame() {
   explanation.value = ''
   teamScores.value = []
   roundPoints.value = 0
+  myReview.value = []
 }
 
 function submitAnswer(key) {
@@ -281,12 +330,12 @@ function submitAnswer(key) {
 
 function getOptionClass(key) {
   if (myAnswer.value === null) {
-    return 'border-slate-200 bg-white hover:border-orange-400 hover:bg-orange-50 text-slate-700'
+    return 'option-default'
   }
   if (myAnswer.value === key) {
-    return 'border-orange-400 bg-orange-50 text-orange-800'
+    return 'option-selected'
   }
-  return 'border-slate-100 bg-slate-50 text-slate-400 opacity-60'
+  return 'option-disabled'
 }
 
 const roundResult = computed(() => {
@@ -303,11 +352,6 @@ const roundResultIcon = computed(() => {
 
 const roundResultText = computed(() => {
   const map = { correct: '回答正确！', partial: '部分正确', wrong: '回答错误', skipped: '未作答' }
-  return map[roundResult.value] || ''
-})
-
-const roundResultColor = computed(() => {
-  const map = { correct: 'text-green-700', partial: 'text-yellow-700', wrong: 'text-red-700', skipped: 'text-slate-500' }
   return map[roundResult.value] || ''
 })
 
@@ -349,7 +393,6 @@ socket.on('team:answer_confirmed', () => {
 
 socket.on('team:submit_error', (data) => {
   submitError.value = data.message
-  // allow retry if the server rejected it
   myAnswer.value = null
 })
 
@@ -363,20 +406,16 @@ socket.on('game:answer_revealed', (data) => {
   teamScores.value = data.teamScores
   stopTimer()
 
-  // Calculate my round points
   const me = data.teamScores.find(t => t.teamId === teamId.value)
   if (me) myScore.value = me.totalScore
   const rr = data.roundResults?.find(r => r.teamId === teamId.value)
   roundPoints.value = rr?.points ?? 0
 })
 
-socket.on('game:waiting_next', () => {
-  // Server tells us next question is coming
-})
-
 socket.on('game:session_ended', (data) => {
   phase.value = 'ended'
   teamScores.value = data.finalScores
+  myReview.value = data.teamReviews?.[teamId.value] || []
   stopTimer()
 })
 
@@ -389,7 +428,865 @@ onUnmounted(() => {
   socket.off('team:answer_confirmed')
   socket.off('team:submit_error')
   socket.off('game:answer_revealed')
-  socket.off('game:waiting_next')
   socket.off('game:session_ended')
 })
 </script>
+
+<style scoped>
+@reference "tailwindcss";
+
+.game-container {
+  min-height: 100vh;
+  background: #FDFBF7;
+  position: relative;
+}
+
+.game-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(ellipse 100% 50% at 50% 0%, rgba(122, 155, 125, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 30% at 50% 100%, rgba(212, 168, 140, 0.04) 0%, transparent 50%),
+    #FDFBF7;
+  pointer-events: none;
+}
+
+.game-content {
+  position: relative;
+  z-index: 1;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.game-content.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  text-align: center;
+}
+
+/* ========== Join Phase ========== */
+.join-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.join-icon {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.join-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1E293B;
+  margin-bottom: 8px;
+}
+
+.join-subtitle {
+  font-size: 15px;
+  color: #64748B;
+}
+
+.join-card {
+  background: white;
+  border-radius: 20px;
+  border: 1px solid #E2E8F0;
+  padding: 28px;
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.input-field {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 2px solid #E2E8F0;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.input-field:focus {
+  border-color: #D4704A;
+}
+
+.input-code {
+  font-family: 'SF Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: center;
+  font-size: 18px;
+}
+
+.error-message {
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: 10px;
+  color: #EF4444;
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.join-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 12px;
+  background: #D4704A;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.join-btn:hover:not(:disabled) {
+  background: #C05A3A;
+  box-shadow: 0 4px 12px rgba(212, 112, 74, 0.3);
+}
+
+.join-btn-disabled {
+  background: #E2E8F0;
+  color: #94A3B8;
+  cursor: not-allowed;
+}
+
+/* ========== Waiting Phase ========== */
+.waiting-icon {
+  margin-bottom: 24px;
+}
+
+.pulse-animation {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+.waiting-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1E293B;
+  margin-bottom: 20px;
+}
+
+.team-badge {
+  background: white;
+  border-radius: 16px;
+  border: 2px solid #D4704A;
+  padding: 20px 32px;
+  margin-bottom: 16px;
+}
+
+.badge-label {
+  display: block;
+  font-size: 13px;
+  color: #64748B;
+  margin-bottom: 4px;
+}
+
+.badge-name {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: #D4704A;
+}
+
+.waiting-text {
+  font-size: 15px;
+  color: #64748B;
+  margin-bottom: 20px;
+}
+
+.teams-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.preview-item {
+  padding: 8px 14px;
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* ========== Question Phase ========== */
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.progress-info {
+  flex: 1;
+}
+
+.progress-info span {
+  font-size: 13px;
+  color: #64748B;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.progress-bar {
+  height: 4px;
+  background: #E2E8F0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #5B7A5E;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.score-badge {
+  padding: 10px 16px;
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.score-team {
+  display: block;
+  font-size: 12px;
+  color: #64748B;
+  margin-bottom: 2px;
+}
+
+/* Timer */
+.timer-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.timer-circle {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin-bottom: 8px;
+}
+
+.timer-svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.timer-bg {
+  fill: none;
+  stroke: #F1F5F9;
+  stroke-width: 3;
+}
+
+.timer-progress {
+  fill: none;
+  stroke: #D4704A;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.25s linear;
+}
+
+.timer-warning .timer-progress {
+  stroke: #EF4444;
+}
+
+.timer-ended .timer-progress {
+  stroke: #94A3B8;
+}
+
+.timer-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px;
+  font-weight: 700;
+  color: #1E293B;
+  font-family: 'SF Mono', monospace;
+}
+
+.timer-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748B;
+}
+
+.timer-warning .timer-label {
+  color: #EF4444;
+}
+
+/* Question Panel */
+.question-panel {
+  background: white;
+  border-radius: 20px;
+  border: 1px solid #E2E8F0;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.question-meta {
+  margin-bottom: 12px;
+}
+
+.question-category {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(212, 112, 74, 0.1);
+  color: #D4704A;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
+}
+
+.question-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1E293B;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.question-scenario {
+  font-size: 15px;
+  color: #64748B;
+  line-height: 1.6;
+}
+
+/* Options */
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.option-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  border: 2px solid #E2E8F0;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.option-btn:hover:not(:disabled).option-default {
+  border-color: #CBD5E1;
+  background: #F8FAFC;
+}
+
+.option-btn:disabled {
+  cursor: not-allowed;
+}
+
+.option-default {
+  border-color: #E2E8F0;
+}
+
+.option-selected {
+  border-color: #D4704A;
+  background: rgba(212, 112, 74, 0.05);
+}
+
+.option-disabled {
+  border-color: #F1F5F9;
+  background: #F8FAFC;
+  opacity: 0.6;
+}
+
+.option-key {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #F1F5F9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: #64748B;
+  flex-shrink: 0;
+}
+
+.option-selected .option-key {
+  background: #D4704A;
+  color: white;
+}
+
+.option-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.4;
+}
+
+/* Status Message */
+.status-message {
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.status-message.success {
+  background: rgba(34, 197, 94, 0.08);
+  color: #16A34A;
+}
+
+.status-message.error {
+  background: rgba(239, 68, 68, 0.08);
+  color: #DC2626;
+}
+
+/* ========== Revealed Phase ========== */
+.phase-indicator {
+  text-align: center;
+  font-size: 13px;
+  color: #94A3B8;
+  margin-bottom: 20px;
+}
+
+.result-panel {
+  border-radius: 20px;
+  padding: 28px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.result-correct {
+  background: rgba(34, 197, 94, 0.08);
+  border: 2px solid #22C55E;
+}
+
+.result-partial {
+  background: rgba(234, 179, 8, 0.08);
+  border: 2px solid #EAB308;
+}
+
+.result-wrong {
+  background: rgba(239, 68, 68, 0.08);
+  border: 2px solid #EF4444;
+}
+
+.result-skipped {
+  background: #F8FAFC;
+  border: 2px solid #E2E8F0;
+}
+
+.result-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.result-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1E293B;
+  margin-bottom: 8px;
+}
+
+.result-score {
+  font-size: 14px;
+  color: #64748B;
+}
+
+/* Answer Panel */
+.answer-panel {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #22C55E;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.answer-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #22C55E;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.answer-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1E293B;
+  margin-bottom: 12px;
+}
+
+.answer-explanation {
+  font-size: 14px;
+  color: #64748B;
+  line-height: 1.6;
+}
+
+/* Partial Panel */
+.partial-panel {
+  background: rgba(234, 179, 8, 0.05);
+  border-radius: 16px;
+  border: 1px solid #EAB308;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.partial-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #B45309;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.partial-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1E293B;
+  margin-bottom: 12px;
+}
+
+.partial-explanation {
+  font-size: 14px;
+  color: #92400E;
+  line-height: 1.6;
+}
+
+/* Leaderboard */
+.leaderboard-panel {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #E2E8F0;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.leaderboard-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16px;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #F8FAFC;
+}
+
+.leaderboard-item.is-me {
+  background: rgba(212, 112, 74, 0.08);
+  border: 1px solid rgba(212, 112, 74, 0.2);
+}
+
+.leaderboard-item.top-three {
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.item-rank {
+  width: 28px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #94A3B8;
+  text-align: center;
+}
+
+.item-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.item-score {
+  font-size: 15px;
+  font-weight: 700;
+  color: #5B7A5E;
+}
+
+.waiting-hint {
+  text-align: center;
+  font-size: 13px;
+  color: #94A3B8;
+}
+
+/* ========== Ended Phase ========== */
+.ended-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.ended-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1E293B;
+  margin-bottom: 24px;
+}
+
+.final-leaderboard {
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 24px;
+}
+
+.final-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.final-item.champion {
+  background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+  border-color: #F59E0B;
+  transform: scale(1.02);
+}
+
+.final-item.is-me {
+  border-color: #D4704A;
+  background: rgba(212, 112, 74, 0.05);
+}
+
+.final-rank {
+  font-size: 20px;
+}
+
+.final-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.final-score {
+  font-size: 16px;
+  font-weight: 700;
+  color: #5B7A5E;
+}
+
+/* Review Section */
+.review-section {
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 24px;
+}
+
+.review-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1E293B;
+  margin-bottom: 16px;
+}
+
+.review-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: #94A3B8;
+  background: #F1F5F9;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.review-list-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review-card {
+  background: white;
+  border-radius: 14px;
+  border: 1px solid #E2E8F0;
+  overflow: hidden;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #F8FAFC;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.review-cat {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+}
+
+.review-idx {
+  font-size: 12px;
+  color: #94A3B8;
+}
+
+.review-body {
+  padding: 14px;
+}
+
+.review-q {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.review-answers {
+  margin-bottom: 10px;
+}
+
+.your-ans {
+  font-size: 13px;
+  color: #EF4444;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.your-ans.partial {
+  color: #B45309;
+}
+
+.partial-badge,
+.wrong-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.partial-badge {
+  background: rgba(234, 179, 8, 0.15);
+  color: #B45309;
+}
+
+.wrong-badge {
+  background: rgba(239, 68, 68, 0.1);
+  color: #DC2626;
+}
+
+.correct-ans {
+  font-size: 13px;
+  color: #16A34A;
+}
+
+.review-tip {
+  font-size: 12px;
+  color: #64748B;
+  background: #F8FAFC;
+  padding: 10px;
+  border-radius: 8px;
+  line-height: 1.5;
+}
+
+/* All Correct */
+.all-correct {
+  padding: 32px;
+  background: rgba(34, 197, 94, 0.08);
+  border-radius: 20px;
+  border: 2px solid #22C55E;
+  margin-bottom: 24px;
+}
+
+.correct-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.all-correct h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #15803D;
+  margin-bottom: 8px;
+}
+
+.all-correct p {
+  font-size: 14px;
+  color: #16A34A;
+}
+
+/* Ended Footer */
+.ended-footer {
+  text-align: center;
+}
+
+.thanks {
+  font-size: 14px;
+  color: #94A3B8;
+  margin-bottom: 16px;
+}
+
+.next-game-btn {
+  padding: 14px 32px;
+  background: #D4704A;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.next-game-btn:hover {
+  background: #C05A3A;
+  box-shadow: 0 4px 12px rgba(212, 112, 74, 0.3);
+}
+</style>

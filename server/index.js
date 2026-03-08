@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import os from 'os'
 import { registerHandlers } from './socketHandlers.js'
+import { setupRealitySocketHandlers } from './realitySocketHandlers.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -32,10 +33,13 @@ app.get('/{*path}', (req, res) => {
   res.sendFile(join(distPath, 'index.html'))
 })
 
-// Socket.io
+// Socket.io - 注册所有处理器
 io.on('connection', (socket) => {
   registerHandlers(io, socket)
 })
+
+// 注册现实挑战处理器
+setupRealitySocketHandlers(io)
 
 // Print LAN IPs
 function getLanIPs() {
@@ -53,7 +57,8 @@ function getLanIPs() {
 
 const PORT = process.env.PORT || 3001
 httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n🌸 茉莉花研学App 服务器已启动`)
+  console.log(`
+🌸 茉莉花研学App 服务器已启动`)
   console.log(`   本机访问: http://localhost:${PORT}`)
   const ips = getLanIPs()
   if (ips.length > 0) {
@@ -62,5 +67,6 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   }
   console.log(`\n   老师控制台: /admin`)
   console.log(`   大屏幕:     /screen`)
-  console.log(`   队伍答题:   /game\n`)
+  console.log(`   队伍答题:   /game`)
+  console.log(`   现实挑战:   /reality\n`)
 })

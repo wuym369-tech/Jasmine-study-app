@@ -147,8 +147,11 @@ export function registerHandlers(io, socket) {
   socket.on('teacher:end_session', ({ sessionId }) => {
     const session = sessions[sessionId]
     if (!session) return socket.emit('error', { message: '场次不存在' })
-    const finalScores = endSession(session)
-    io.to(sessionId).emit('game:session_ended', { finalScores })
+    const result = endSession(session, { scenarios })
+    io.to(sessionId).emit('game:session_ended', {
+      finalScores: result.teamScores,
+      teamReviews: result.teamReviews,
+    })
   })
 
   // ---- 队伍：加入 ----
