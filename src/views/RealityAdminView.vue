@@ -1,7 +1,8 @@
 <template>
-  <div class="reality-admin min-h-screen bg-cream-50">
+  <div class="reality-admin min-h-screen reality-admin-page">
+    <div class="reality-admin-bg" aria-hidden="true" />
     <!-- 顶部导航 -->
-    <nav class="reality-admin-nav sticky top-0 left-0 right-0 z-50 border-b border-stone-200">
+    <nav class="reality-admin-nav sticky top-0 left-0 right-0 z-50">
       <div class="reality-admin-nav-inner max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <img src="/images/jasmine-logo.png" alt="香香花园" class="h-10 w-auto object-contain" />
@@ -15,7 +16,7 @@
             class="px-4 py-2 rounded-lg font-medium transition-colors"
             :class="canCreate ? 'bg-coral-500 text-white hover:bg-coral-600' : 'bg-stone-200 text-stone-400 cursor-not-allowed'"
           >
-            {{ creating ? '创建中…' : socketConnected ? '创建游戏' : '连接中…' }}
+            {{ creating ? '创建中…' : connected ? '创建游戏' : '连接中…' }}
           </button>
           <button @click="$router.push('/admin')" class="text-stone-500 hover:text-bamboo-600 transition-colors">
             返回控制台
@@ -36,24 +37,6 @@
           </div>
 
           <div class="space-y-6">
-            <div>
-              <label class="block text-sm font-medium text-stone-600 mb-3">选择季节</label>
-              <div class="grid grid-cols-4 gap-3">
-                <button
-                  v-for="season in seasons"
-                  :key="season.id"
-                  @click="selectedSeason = season.id"
-                  class="p-4 rounded-xl border-2 text-center transition-all"
-                  :class="selectedSeason === season.id 
-                    ? 'border-coral-500 bg-amber-100' 
-                    : 'border-stone-200 hover:border-coral-500/50'"
-                >
-                  <div class="text-3xl mb-2">{{ season.icon }}</div>
-                  <div class="font-medium">{{ season.name }}</div>
-                </button>
-              </div>
-            </div>
-
             <div class="flex items-center gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200/60">
               <input 
                 v-model="showAnimations" 
@@ -64,7 +47,7 @@
               <label for="animations" class="text-stone-600">启用茉莉花生长动画</label>
             </div>
 
-            <p v-if="!socketConnected" class="text-center text-sm text-stone-500">
+            <p v-if="!connected" class="text-center text-sm text-stone-500">
               正在连接服务器…
             </p>
             <button 
@@ -73,7 +56,7 @@
               class="w-full py-4 rounded-xl font-bold text-lg text-white transition-all transform hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
               :class="canCreate ? 'bg-coral-500 hover:bg-coral-600' : 'bg-stone-200'"
             >
-              {{ creating ? '创建中…' : socketConnected ? '创建游戏' : '请稍候…' }}
+              {{ creating ? '创建中…' : connected ? '创建游戏' : '请稍候…' }}
             </button>
           </div>
         </div>
@@ -97,11 +80,6 @@
               >
                 打开大屏幕（新分页）
               </a>
-              <div class="h-10 w-px bg-stone-200"></div>
-              <div>
-                <div class="text-sm text-stone-500">当前季节</div>
-                <div class="text-xl font-bold text-stone-700">{{ currentSeasonName }}</div>
-              </div>
               <div class="h-10 w-px bg-stone-200"></div>
               <div>
                 <div class="text-sm text-stone-500">参与队伍</div>
@@ -240,37 +218,23 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { io } from 'socket.io-client'
+import { useSocket } from '../composables/useSocket.js'
 import JasmineGrowthAnimation from '../components/JasmineGrowthAnimation.vue'
 
 const router = useRouter()
 const route = useRoute()
 
-// 季节选项
-const seasons = [
-  { id: 'spring', name: '春季', icon: '🌸' },
-  { id: 'summer', name: '夏季', icon: '☀️' },
-  { id: 'autumn', name: '秋季', icon: '🍂' },
-  { id: 'winter', name: '冬季', icon: '❄️' }
-]
+// 與其他頁面共用 Socket（單例）；離開頁面勿 disconnect，否則 Socket.io 會重用已斷線實例導致永遠「連接中」
+const { socket, connected } = useSocket()
 
-// 状态
-const socket = ref(null)
 const sessionId = ref('')
 const teams = ref([])
 const leaderboard = ref([])
 const finalResults = ref(null)
 
 // 配置
-const selectedSeason = ref('spring')
 const showAnimations = ref(true)
-const socketConnected = ref(false)
 const creating = ref(false)
-
-// 计算属性
-const currentSeasonName = computed(() => {
-  return seasons.find(s => s.id === selectedSeason.value)?.name || '春季'
-})
 
 const activeTeams = computed(() => {
   return teams.value.filter(t => t.status === 'playing').length
@@ -290,7 +254,7 @@ const averageProgress = computed(() => {
   return Math.round(total / leaderboard.value.length)
 })
 
-const canCreate = computed(() => socketConnected.value && !creating.value)
+const canCreate = computed(() => connected.value && !creating.value)
 
 const screenUrl = computed(() => {
   if (!sessionId.value) return '#'
@@ -298,66 +262,62 @@ const screenUrl = computed(() => {
   return `${origin}/reality/screen/${sessionId.value}`
 })
 
-// 方法
-function initSocket() {
-  socket.value = io(window.location.origin, {
-    path: '/socket.io',
-    transports: ['websocket', 'polling']
-  })
+function onRealityCreated(data) {
+  creating.value = false
+  sessionId.value = data.sessionId
+  teams.value = []
+  finalResults.value = null
+}
 
-  socket.value.on('connect', () => {
-    console.log('Admin connected to reality game server')
-    socketConnected.value = true
-  })
+function onRealityRejoined(data) {
+  sessionId.value = data.sessionId
+  teams.value = data.session?.teams || []
+  leaderboard.value = data.leaderboard || []
+}
 
-  socket.value.on('disconnect', () => {
-    socketConnected.value = false
-  })
+function onRealityTeamJoined(data) {
+  teams.value = data.teams || []
+  leaderboard.value = data.leaderboard || []
+}
 
-  socket.value.on('reality:created', (data) => {
-    creating.value = false
-    sessionId.value = data.sessionId
-    teams.value = []
-    finalResults.value = null
-    // 留在教師控制台，不跳轉；大屏幕請另開分頁 /reality/screen/場次號
-  })
+function onRealityLeaderboard(data) {
+  leaderboard.value = data.leaderboard || []
+  if (data.leaderboard) {
+    teams.value = data.leaderboard.map(t => ({
+      teamId: t.teamId,
+      teamName: t.teamName,
+      status: t.preview ? 'playing' : 'finished',
+      currentDay: t.currentDay,
+      ...t.finalStats
+    }))
+  }
+}
 
-  socket.value.on('reality:rejoined', (data) => {
-    sessionId.value = data.sessionId
-    teams.value = data.session?.teams || []
-    leaderboard.value = data.leaderboard || []
-  })
+function onRealityError(data) {
+  creating.value = false
+  alert(data.message)
+}
 
-  socket.value.on('reality:team_joined', (data) => {
-    teams.value = data.teams || []
-    leaderboard.value = data.leaderboard || []
-  })
+function registerRealityAdminListeners() {
+  socket.on('reality:created', onRealityCreated)
+  socket.on('reality:rejoined', onRealityRejoined)
+  socket.on('reality:team_joined', onRealityTeamJoined)
+  socket.on('reality:leaderboard', onRealityLeaderboard)
+  socket.on('reality:error', onRealityError)
+}
 
-  socket.value.on('reality:leaderboard', (data) => {
-    leaderboard.value = data.leaderboard || []
-    // 更新队伍列表
-    if (data.leaderboard) {
-      teams.value = data.leaderboard.map(t => ({
-        teamId: t.teamId,
-        teamName: t.teamName,
-        status: t.preview ? 'playing' : 'finished',
-        currentDay: t.currentDay,
-        ...t.finalStats
-      }))
-    }
-  })
-
-  socket.value.on('reality:error', (data) => {
-    creating.value = false
-    alert(data.message)
-  })
+function unregisterRealityAdminListeners() {
+  socket.off('reality:created', onRealityCreated)
+  socket.off('reality:rejoined', onRealityRejoined)
+  socket.off('reality:team_joined', onRealityTeamJoined)
+  socket.off('reality:leaderboard', onRealityLeaderboard)
+  socket.off('reality:error', onRealityError)
 }
 
 function createSession() {
-  if (!socketConnected.value || creating.value) return
+  if (!connected.value || creating.value) return
   creating.value = true
-  socket.value.emit('reality:create', {
-    season: selectedSeason.value,
+  socket.emit('reality:create', {
     config: {
       enableAnimations: showAnimations.value
     }
@@ -373,34 +333,51 @@ function resetGame() {
 
 // 生命周期
 onMounted(() => {
-  initSocket()
-  
+  registerRealityAdminListeners()
+  if (!socket.connected) {
+    socket.connect()
+  }
   // 检查URL参数中是否有sessionId（页面刷新后恢复状态）
   const urlSessionId = route.query.session
   if (urlSessionId) {
     sessionId.value = urlSessionId
-    // 重新加入场次获取最新状态
-    socket.value.emit('reality:teacher:rejoin', { sessionId: urlSessionId })
+    socket.emit('reality:teacher:rejoin', { sessionId: urlSessionId })
   }
 })
 
 onUnmounted(() => {
-  if (socket.value) {
-    socket.value.disconnect()
-  }
+  unregisterRealityAdminListeners()
 })
 </script>
 
 <style scoped>
 @reference "tailwindcss";
 
-.reality-admin {
+.reality-admin-page {
+  position: relative;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #fdfbf7;
+}
+
+.reality-admin-bg {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 40% at 20% 0%, rgba(122, 159, 70, 0.06), transparent),
+    radial-gradient(ellipse 60% 35% at 90% 30%, rgba(212, 112, 74, 0.06), transparent);
+}
+
+.reality-admin > *:not(.reality-admin-bg) {
+  position: relative;
+  z-index: 1;
 }
 
 .reality-admin-nav {
   background: rgba(253, 251, 247, 0.95);
   backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(139, 115, 85, 0.1);
 }
 
 .reality-admin-nav-inner {

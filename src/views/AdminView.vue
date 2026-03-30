@@ -457,6 +457,13 @@ socket.on('teacher:rejoined', (data) => {
   answeredCount.value = answeredTeams.value.size
 })
 
+socket.on('teacher:error', (data) => {
+  // 常見情境：重新進入 admin 時，localStorage 有舊場次但後端已經沒有了
+  // 這時清掉本機狀態，回到可重新建立場次的 setup
+  localStorage.removeItem('admin_sessionId')
+  resetToSetup()
+})
+
 socket.on('admin:team_joined', (data) => {
   if (!teams.value.find(t => t.teamId === data.teamId)) {
     teams.value.push({ teamId: data.teamId, teamName: data.teamName })
@@ -517,6 +524,7 @@ onMounted(() => {
 onUnmounted(() => {
   socket.off('teacher:session_created')
   socket.off('teacher:rejoined')
+  socket.off('teacher:error')
   socket.off('admin:team_joined')
   socket.off('admin:answer_status')
   socket.off('game:question_started')

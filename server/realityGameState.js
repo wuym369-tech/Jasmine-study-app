@@ -1,3 +1,5 @@
+import { toSimplifiedDeep } from './zhSimplify.js'
+
 // ===========================
 // 现实挑战 - 游戏状态管理（异步自动模式）
 // 每个学生独立进行游戏，自动推进天数
@@ -36,6 +38,7 @@ export const cuttingEvents = [
     title: '选择扦插枝条',
     icon: '✂️',
     description: '选择健康的茉莉花枝条进行扦插。选择半木质化的枝条成活率最高。',
+    explanation: '半木質化枝條（介於嫩綠與全木質化之間）含水量適中、細胞分裂旺盛，45°斜切面增大生根面積，是扦插成活率最高的選擇。過嫩易腐爛，老枝生根能力弱。',
     options: [
       { id: 'A', text: '选择半木质化、健康的枝条，斜切45度角', cost: { labor: 2 }, effects: { health: 10, growth: 15 }, score: 100 },
       { id: 'B', text: '随意剪取较嫩的枝条', cost: { labor: 1 }, effects: { health: 3, growth: 5 }, score: 60 },
@@ -50,6 +53,7 @@ export const cuttingEvents = [
     title: '准备扦插基质',
     icon: '🪴',
     description: '准备疏松透气的扦插基质，可以使用河沙、蛭石或珍珠岩。',
+    explanation: '河沙+珍珠岩混合基質排水透氣性佳，先消毒能殺滅真菌與線蟲，大幅降低插穗腐爛率。普通園土黏重、排水差，容易積水爛根。',
     options: [
       { id: 'A', text: '使用河沙+珍珠岩混合基质，消毒处理', cost: { money: 200, labor: 2 }, effects: { health: 8, growth: 10 }, score: 100 },
       { id: 'B', text: '直接使用普通园土', cost: { labor: 1 }, effects: { health: 2, growth: 3 }, score: 55 },
@@ -64,6 +68,7 @@ export const cuttingEvents = [
     title: '扦插后遮阴保湿',
     icon: '🌿',
     description: '扦插后需要遮阴保湿，保持环境湿度，促进生根。',
+    explanation: '扦插初期插穗還沒有根系，必須靠葉片吸水維持。遮陰可降低蒸散速率，噴霧保濕讓空氣濕度維持 80% 以上，才能在根系形成前存活。全日照會導致插穗迅速失水死亡。',
     options: [
       { id: 'A', text: '搭建遮阴棚，每天喷雾保湿2-3次', cost: { money: 300, labor: 3 }, effects: { health: 12, growth: 15 }, score: 100 },
       { id: 'B', text: '简单遮阴，偶尔浇水', cost: { labor: 1 }, effects: { health: 4, growth: 5 }, score: 60 },
@@ -78,6 +83,7 @@ export const cuttingEvents = [
     title: '插穗消毒與生根劑',
     icon: '🧴',
     description: '扦插前插穗可用多菌靈等消毒 2–4 分鐘，基部蘸生根粉後再插入基質，可提高成活率。',
+    explanation: '兩步驟缺一不可：消毒（多菌靈）消滅切口上的真菌病原，生根粉（IAA/IBA）促進細胞分化形成愈傷組織。單獨使用其一效果有限，雙管齊下可將成活率提升 20–30%。',
     options: [
       { id: 'A', text: '多菌靈消毒 2–4 分鐘、基部蘸生根粉後扦插', cost: { money: 80, labor: 2 }, effects: { health: 10, growth: 12 }, score: 100 },
       { id: 'B', text: '只蘸生根粉、不消毒', cost: { money: 50, labor: 1 }, effects: { health: 4, growth: 6 }, score: 65 },
@@ -162,6 +168,20 @@ export const seedlingEvents = [
       { id: 'C', text: '暫不施肥，只澆水', cost: { labor: 0 }, effects: { health: 2, growth: 4 }, score: 60 },
       { id: 'D', text: '只噴葉面肥、不灌根', cost: { money: 100, labor: 2 }, effects: { health: 4, growth: 6 }, score: 70 }
     ]
+  },
+  {
+    id: 'SD003',
+    type: 'seedling',
+    complexity: 'simple',
+    title: '土壤酸鹼度調整',
+    icon: '🧪',
+    description: '茉莉花喜微酸性土壤（pH 5.5–6.5）。定植前測得土壤 pH 7.2（偏鹼），需要進行調整。',
+    options: [
+      { id: 'A', text: '施用硫酸亞鐵或有機酸性肥，分次調整至 pH 6.0', cost: { money: 180, labor: 2 }, effects: { health: 10, growth: 8 }, score: 100 },
+      { id: 'B', text: '混入大量醋酸一次調整', cost: { money: 100, labor: 1 }, effects: { health: -5, growth: 2 }, score: 35 },
+      { id: 'C', text: '暫不調整，直接定植', cost: { labor: 0 }, effects: { health: -6, growth: 3 }, score: 40 },
+      { id: 'D', text: '加入腐葉土和松針土改良', cost: { money: 250, labor: 3 }, effects: { health: 7, growth: 10 }, score: 85 }
+    ]
   }
 ];
 
@@ -193,6 +213,34 @@ export const vegetativeEvents = [
       { id: 'B', text: '全部留長不剪、多開花', cost: { labor: 0 }, effects: { health: -2, growth: 4 }, score: 45 },
       { id: 'C', text: '全部重剪到 10 cm 統一高度', cost: { labor: 3 }, effects: { health: 2, growth: 3 }, score: 50 },
       { id: 'D', text: '只剪病弱枝、其餘不剪', cost: { labor: 1 }, effects: { health: 4, growth: 7 }, score: 70 }
+    ]
+  },
+  {
+    id: 'VG003',
+    type: 'vegetative',
+    complexity: 'simple',
+    title: '高溫期葉面追肥',
+    icon: '🌡️',
+    description: '夏季高溫 35°C 以上時根系吸肥效率下降，葉面噴施磷鉀肥可直接補充養分。',
+    options: [
+      { id: 'A', text: '清晨或傍晚噴施 0.2% 磷酸二氫鉀葉面肥', cost: { money: 120, labor: 2 }, effects: { health: 8, growth: 10 }, score: 100 },
+      { id: 'B', text: '正午高溫時噴施，省時省力', cost: { money: 100, labor: 1 }, effects: { health: -5, growth: 2 }, score: 30 },
+      { id: 'C', text: '不噴葉面肥，繼續灌根施肥', cost: { money: 200, labor: 2 }, effects: { health: 3, growth: 6 }, score: 65 },
+      { id: 'D', text: '高溫期停止所有施肥', cost: { labor: 0 }, effects: { health: 0, growth: 2 }, score: 45 }
+    ]
+  },
+  {
+    id: 'VG004',
+    type: 'vegetative',
+    complexity: 'simple',
+    title: '除草與鬆土管理',
+    icon: '🌾',
+    description: '雨後雜草生長旺盛，與茉莉花爭奪養分。需要選擇除草方式，同時注意不傷根系。',
+    options: [
+      { id: 'A', text: '人工除草 + 淺鋤鬆土，保持通氣', cost: { labor: 4 }, effects: { health: 8, growth: 8 }, score: 100 },
+      { id: 'B', text: '噴施除草劑快速清除', cost: { money: 400, labor: 1 }, effects: { health: -6, growth: 3 }, isOrganic: false, score: 40 },
+      { id: 'C', text: '覆蓋黑色地膜抑草', cost: { money: 600, labor: 3 }, effects: { health: 5, growth: 6 }, score: 80 },
+      { id: 'D', text: '不除草，任其自然', cost: { labor: 0 }, effects: { health: -4, growth: -3 }, score: 20 }
     ]
   }
 ];
@@ -258,6 +306,34 @@ export const harvestEvents = [
       { id: 'C', text: '堆積在田頭、傍晚一次運走', cost: { labor: 1 }, effects: { quality: -20, flowers: -5 }, score: 25 },
       { id: 'D', text: '不分級、混裝出貨', cost: { labor: 1 }, effects: { quality: -5, flowers: 2 }, score: 60 }
     ]
+  },
+  {
+    id: 'HV003',
+    type: 'harvest',
+    complexity: 'simple',
+    title: '向茶廠出售本批花',
+    icon: '💰',
+    description: '今日採收花蕾品質良好，需要決定出售管道和出售時機，直接影響收入。',
+    options: [
+      { id: 'A', text: '當日直送合作茶廠、保最新鮮度，溢價 10%', cost: { labor: 3, money: 300 }, effects: { money: 4500, quality: 5 }, score: 100 },
+      { id: 'B', text: '就近賣給中間商，省去運費', cost: { labor: 1 }, effects: { money: 2500 }, score: 65 },
+      { id: 'C', text: '存放一天等更高價格', cost: { labor: 1 }, effects: { money: 1500, quality: -10 }, score: 40 },
+      { id: 'D', text: '全部自製花茶，附加值更高', cost: { labor: 5, money: 500 }, effects: { money: 5500 }, score: 85 }
+    ]
+  },
+  {
+    id: 'HV004',
+    type: 'harvest',
+    complexity: 'simple',
+    title: '特級花蕾的開拓市場',
+    icon: '⭐',
+    description: '這批花蕾品質特別好，可考慮開拓高端市場，如精油廠、高端禮盒包裝等更高利潤管道。',
+    options: [
+      { id: 'A', text: '聯繫精油廠按鮮花收購（精油用途更高價）', cost: { labor: 2, money: 200 }, effects: { money: 6000 }, score: 100 },
+      { id: 'B', text: '自製精美禮盒茉莉花茶在本地銷售', cost: { labor: 4, money: 800 }, effects: { money: 4500 }, score: 80 },
+      { id: 'C', text: '仍按普通管道出售', cost: { labor: 2 }, effects: { money: 2200 }, score: 50 },
+      { id: 'D', text: '壓低價格快速出清', cost: { labor: 1 }, effects: { money: 1200, quality: -5 }, score: 30 }
+    ]
   }
 ];
 
@@ -314,6 +390,109 @@ export const complexEvents = [
       { id: 'C', text: '减少采收量 + 等待价格回升', cost: { labor: 1 }, effects: { income: -35, flowers: -30 }, score: 40 }
     ]
   },
+  {
+    id: 'C_LAB',
+    type: CrisisTypes.LABOR,
+    complexity: 'complex',
+    severity: SeverityLevels.MODERATE,
+    title: '農忙期人力調度',
+    icon: '👷',
+    description: '採收高峰前有工人請假，需決定如何補位，否則當日人力會吃緊。',
+    validSeasons: ['all'],
+    options: [
+      { id: 'A', text: '臨時雇工並給加班費', cost: { money: 1200, labor: 1 }, effects: { mood: 8, income: 0.15 }, score: 90 },
+      { id: 'B', text: '不補人，餘下人員分攤（有人請假）', cost: { labor: 0 }, effects: { laborLeave: { count: 2, days: 2 }, mood: -6 }, score: 65 },
+      { id: 'C', text: '與鄰田換工支援半天', cost: { money: 400, labor: 2 }, effects: { mood: 4 }, score: 80 }
+    ]
+  },
+]
+
+// 增收事件（各阶段均可出现，帮助玩家在游戏中赚钱）
+export const incomeEvents = [
+  {
+    id: 'INC001',
+    type: 'income',
+    complexity: 'complex',
+    title: '申请农业种植补贴',
+    icon: '🏛️',
+    description: '县农业局开放本年度茉莉花种植扶持补贴申请，材料齐全者可获 4000–5000 元补助，需配合现场核验。',
+    validSeasons: ['all'],
+    options: [
+      { id: 'A', text: '整理种植记录、土地证、购苗发票，完整申请', cost: { labor: 3 }, effects: { money: 4800 }, score: 100 },
+      { id: 'B', text: '快速填报、材料不全碰运气', cost: { labor: 1 }, effects: { money: 1500 }, score: 55 },
+      { id: 'C', text: '嫌麻烦不申请，错失机会', cost: {}, effects: {}, score: 15 }
+    ]
+  },
+  {
+    id: 'INC002',
+    type: 'income',
+    complexity: 'complex',
+    title: '茶厂收购谈判',
+    icon: '🤝',
+    description: '附近茶厂派员来访，希望收购这批茉莉花。你可以选择谈判策略，影响本批收购单价（市场价约 16 元/斤）。',
+    validSeasons: ['all'],
+    options: [
+      { id: 'A', text: '展示品质记录与有机认证，据理力争提价 15%', cost: { labor: 2 }, effects: { money: 3500, quality: 5 }, score: 100 },
+      { id: 'B', text: '接受茶厂报价，快速成交', cost: { labor: 1 }, effects: { money: 2000 }, score: 70 },
+      { id: 'C', text: '拒绝合作，等更高价买家（风险：花蕾过期）', cost: {}, effects: { money: -300, health: -5 }, score: 25 }
+    ]
+  },
+  {
+    id: 'INC003',
+    type: 'income',
+    complexity: 'complex',
+    title: '农产品直播带货',
+    icon: '📱',
+    description: '本地网红提议合拍直播，展示茉莉花种植到采收全过程，帮助开辟线上高价销路，但需投入时间配合。',
+    validSeasons: ['all'],
+    options: [
+      { id: 'A', text: '全力配合直播，精心展示种植专业度和花田风光', cost: { labor: 4, money: 300 }, effects: { money: 5500 }, score: 100 },
+      { id: 'B', text: '简单参与，拍几个短视频', cost: { labor: 2 }, effects: { money: 2000 }, score: 65 },
+      { id: 'C', text: '拒绝直播，担心浪费时间', cost: {}, effects: {}, score: 15 }
+    ]
+  },
+  {
+    id: 'INC004',
+    type: 'income',
+    complexity: 'complex',
+    title: '农业展销会参展',
+    icon: '🏪',
+    description: '县农业局组织农产品展销会，邀请茉莉花农参展。参展需一定费用，但可直接接触高端买家与茶企。',
+    validSeasons: ['all'],
+    options: [
+      { id: 'A', text: '精心布展，带高品质花样、有机证书和种植手册', cost: { money: 800, labor: 3 }, effects: { money: 6500, quality: 8 }, score: 100 },
+      { id: 'B', text: '简单参展，只摆放产品', cost: { money: 300, labor: 2 }, effects: { money: 2500 }, score: 65 },
+      { id: 'C', text: '不参展，觉得太麻烦', cost: {}, effects: {}, score: 10 }
+    ]
+  },
+  {
+    id: 'INC005',
+    type: 'income',
+    complexity: 'complex',
+    title: '签订长期收购合同',
+    icon: '📋',
+    description: '知名茶企希望与你签订两年长期收购合同，以稳定保底价格换取优先供货权，降低市场波动风险。',
+    validSeasons: ['all'],
+    options: [
+      { id: 'A', text: '对比多家茶企报价后签约，争取最高保底价', cost: { labor: 2 }, effects: { money: 3800 }, score: 100 },
+      { id: 'B', text: '直接签约，接受当前保底价，稳定优先', cost: { labor: 1 }, effects: { money: 2500 }, score: 80 },
+      { id: 'C', text: '不签，全部自行寻找散客', cost: {}, effects: { money: -500, mood: -5 }, score: 30 }
+    ]
+  },
+  {
+    id: 'INC006',
+    type: 'income',
+    complexity: 'complex',
+    title: '与邻田合作批量出货',
+    icon: '🤲',
+    description: '邻近几户茉莉花农提议联合出货，以量换价，争取更高的批量收购单价，但需要统一品质标准。',
+    validSeasons: ['all'],
+    options: [
+      { id: 'A', text: '联合组建合作社，统一分级标准后批量出货', cost: { labor: 3, money: 500 }, effects: { money: 4000, quality: 5 }, score: 100 },
+      { id: 'B', text: '松散联合，仅共用运输', cost: { labor: 1, money: 200 }, effects: { money: 1800 }, score: 65 },
+      { id: 'C', text: '单独出售，不参与联合', cost: {}, effects: {}, score: 30 }
+    ]
+  }
 ]
 
 // 多選題（questionType: 'multiple'，correctOptionIds 為正確選項 id 陣列）
@@ -716,11 +895,12 @@ export const hardSingleChoiceEvents = [
 
 // 游戏配置
 export const GameConfig = {
-  TOTAL_DAYS: 14,           // 游戏总天数（2周）
+  TOTAL_DAYS: 14,
   MAX_EVENTS_PER_DAY: 3,    // 每天最多事件数
   COMPLEX_EVENT_CHANCE: 0.4, // 40%概率出现复杂事件
-  STARTING_MONEY: 3000,
+  STARTING_MONEY: 6000,
   STARTING_LABOR: 8,
+  COST_MULTIPLIER: 3,   // 所有事件花費 × 3，讓資金更緊張
   GRADE_THRESHOLDS: { S: 95, A: 85, B: 70, C: 60, D: 50 },
   
   // 成长阶段配置
@@ -751,8 +931,10 @@ export const TeamStatusTemplate = {
   totalScore: 0,
   
   // 经济数据
-  money: 3000,  // 起始资金
-  labor: 8,     // 起始人力
+  money: 6000,  // 起始资金
+  labor: 8,      // 当日可用人力（每日刷新）
+  baseLabor: 8,  // 基础人力（不含请假影响）
+  laborLeave: { count: 0, untilDay: 0 }, // 请假：count 人请假，持续到某天（含）
   totalIncome: 0,
   totalCost: 0,
   netProfit: 0,
@@ -790,6 +972,19 @@ export const TeamStatusTemplate = {
   }
 }
 
+// 将事件选项的金钱成本乘以配置倍率（供前端显示与服务端扣除保持一致）
+function applyEventCostMultiplier(event) {
+  const mult = GameConfig.COST_MULTIPLIER || 1
+  if (mult === 1 || !event?.options) return event
+  return {
+    ...event,
+    options: event.options.map(opt => ({
+      ...opt,
+      cost: opt.cost ? { ...opt.cost, money: Math.round((opt.cost.money || 0) * mult) } : opt.cost
+    }))
+  }
+}
+
 // 为队伍生成当天的事件（根据成长阶段，含多選／排序／極端題型）
 export function generateDayEvents(day, weekDay, season, growthStage, previousEvents = []) {
   const events = []
@@ -813,10 +1008,21 @@ export function generateDayEvents(day, weekDay, season, growthStage, previousEve
   for (let i = 0; i < eventCount; i++) {
     const eventInstanceId = `${day}-${i}-${Date.now()}`
     const usedIds = events.map(e => e.id)
+    const historyIds = new Set((previousEvents || []).map(e => e.id).filter(Boolean))
+
+    // 第 3 天後有 20% 機會出現增收事件（保證每局至少有賺錢途徑）
+    if (day >= 3 && Math.random() < 0.20) {
+      const available = incomeEvents.filter(e => !usedIds.includes(e.id) && !historyIds.has(e.id))
+      const pool = available.length ? available : incomeEvents.filter(e => !usedIds.includes(e.id))
+      if (pool.length) {
+        events.push({ ...pickOne(pool), eventInstanceId, complexity: 'complex' })
+        continue
+      }
+    }
 
     if (stageSpecificEvents.length > 0 && Math.random() < 0.5) {
-      const available = stageSpecificEvents.filter(e => !usedIds.includes(e.id))
-      const pool = available.length ? available : stageSpecificEvents
+      const available = stageSpecificEvents.filter(e => !usedIds.includes(e.id) && !historyIds.has(e.id))
+      const pool = available.length ? available : stageSpecificEvents.filter(e => !usedIds.includes(e.id))
       if (pool.length) events.push({ ...pickOne(pool), eventInstanceId, complexity: 'simple' })
       continue
     }
@@ -825,21 +1031,21 @@ export function generateDayEvents(day, weekDay, season, growthStage, previousEve
     // 極端 18%、多選 25%、排序 22%、四選一+複雜 20%、原複雜 15%、簡單 fallback
     if (roll < 0.18) {
       const valid = extremeCombinedEvents.filter(e => (e.validSeasons || []).includes(season) || (e.validSeasons || []).includes('all'))
-      const available = valid.filter(e => !usedIds.includes(e.id))
+      const available = valid.filter(e => !usedIds.includes(e.id) && !historyIds.has(e.id))
       const selected = available.length ? available[Math.floor(Math.random() * available.length)] : valid[0]
       if (selected) events.push({ ...selected, eventInstanceId, complexity: 'complex' })
       continue
     }
     if (roll < 0.43) {
       const valid = multipleChoiceEvents.filter(e => (e.validSeasons || []).includes(season) || (e.validSeasons || []).includes('all'))
-      const available = valid.filter(e => !usedIds.includes(e.id))
+      const available = valid.filter(e => !usedIds.includes(e.id) && !historyIds.has(e.id))
       const selected = available.length ? available[Math.floor(Math.random() * available.length)] : valid[0]
       if (selected) events.push({ ...selected, eventInstanceId, complexity: 'complex' })
       continue
     }
     if (roll < 0.65) {
       const valid = sortEvents.filter(e => (e.validSeasons || []).includes(season) || (e.validSeasons || []).includes('all'))
-      const available = valid.filter(e => !usedIds.includes(e.id))
+      const available = valid.filter(e => !usedIds.includes(e.id) && !historyIds.has(e.id))
       const selected = available.length ? available[Math.floor(Math.random() * available.length)] : valid[0]
       if (selected) events.push({ ...selected, eventInstanceId, complexity: 'complex' })
       continue
@@ -847,31 +1053,31 @@ export function generateDayEvents(day, weekDay, season, growthStage, previousEve
     if (roll < 0.85) {
       const validComplex = bySeason(complexEvents)
       const validHard = bySeason(hardSingleChoiceEvents)
-      const pool = [...validComplex, ...validHard].filter(e => !usedIds.includes(e.id))
-      const fallback = pool.length ? pool : [...validComplex, ...validHard]
+      const pool = [...validComplex, ...validHard].filter(e => !usedIds.includes(e.id) && !historyIds.has(e.id))
+      const fallback = pool.length ? pool : [...validComplex, ...validHard].filter(e => !usedIds.includes(e.id))
       if (fallback.length) events.push({ ...pickOne(fallback), eventInstanceId, complexity: 'complex' })
       continue
     }
     if (roll < 0.97) {
-      const available = bySeason(complexEvents).filter(e => !usedIds.includes(e.id))
-      const fallback = available.length ? available : bySeason(complexEvents)
+      const available = bySeason(complexEvents).filter(e => !usedIds.includes(e.id) && !historyIds.has(e.id))
+      const fallback = available.length ? available : bySeason(complexEvents).filter(e => !usedIds.includes(e.id))
       if (fallback.length) events.push({ ...pickOne(fallback), eventInstanceId, complexity: 'complex' })
       continue
     }
-    const availableSimple = simpleEvents.filter(e => !usedIds.includes(e.id))
-    const simplePool = availableSimple.length ? availableSimple : simpleEvents
+    const availableSimple = simpleEvents.filter(e => !usedIds.includes(e.id) && !historyIds.has(e.id))
+    const simplePool = availableSimple.length ? availableSimple : simpleEvents.filter(e => !usedIds.includes(e.id))
     if (simplePool.length) {
       events.push({ ...pickOne(simplePool), eventInstanceId, complexity: 'simple' })
     } else {
       const validComplex = bySeason(complexEvents)
       const validHard = bySeason(hardSingleChoiceEvents)
-      const pool = [...validComplex, ...validHard].filter(e => !usedIds.includes(e.id))
-      const fallback = pool.length ? pool : [...validComplex, ...validHard]
+      const pool = [...validComplex, ...validHard].filter(e => !usedIds.includes(e.id) && !historyIds.has(e.id))
+      const fallback = pool.length ? pool : [...validComplex, ...validHard].filter(e => !usedIds.includes(e.id))
       if (fallback.length) events.push({ ...pickOne(fallback), eventInstanceId, complexity: 'complex' })
     }
   }
 
-  return events
+  return events.map(applyEventCostMultiplier)
 }
 
 // 计算最终得分
@@ -893,12 +1099,12 @@ export function calculateFinalScore(teamStatus) {
   else if (totalScore >= GameConfig.GRADE_THRESHOLDS.C) grade = 'C'
   else if (totalScore >= GameConfig.GRADE_THRESHOLDS.D) grade = 'D'
   
-  return {
+  return toSimplifiedDeep({
     totalScore: Math.round(totalScore),
     details: scores,
     grade,
     evaluation: generateEvaluation(totalScore, scores)
-  }
+  })
 }
 
 function generateEvaluation(totalScore, scores) {
@@ -957,7 +1163,7 @@ export class RealityGameState {
     }
     
     // 生成第1天的事件（从扦插期开始）
-    teamStatus.currentEvents = generateDayEvents(1, 0, session.season, 'cutting')
+    teamStatus.currentEvents = generateDayEvents(1, 0, session.season, 'cutting', teamStatus.completedEvents)
     
     session.teams.set(teamId, teamStatus)
     return { success: true, teamStatus: this.getPublicTeamStatus(teamStatus) }
@@ -992,16 +1198,26 @@ export class RealityGameState {
       return { error: '该事件已处理' }
     }
     
-    // 应用决策效果，取得 baseScore 供錯題復盤
-    const { baseScore } = this.applyDecisionEffects(team, event, decision)
-    const isWrong = baseScore < 80
+    // 应用决策效果
+    const result = this.applyDecisionEffects(team, event, decision)
+    if (result?.error) return { error: result.error }
+    const baseScore = result?.baseScore ?? 50
+    // 跳过的事件不计入错题复盘（玩家无法选择时不怪罪）
+    const isWrong = !result?.skipped && baseScore < 80
+
+    const decisionRecord = decision.skip
+      ? { skip: true }
+      : decision.optionId != null ? { optionId: decision.optionId }
+      : decision.optionIds ? { optionIds: decision.optionIds }
+      : { order: decision.order }
 
     team.completedEvents.push({
       ...event,
-      decision: decision.optionId != null ? { optionId: decision.optionId } : decision.optionIds ? { optionIds: decision.optionIds } : { order: decision.order },
+      decision: decisionRecord,
       completedAt: Date.now(),
       baseScore,
-      isWrong
+      isWrong,
+      skipped: result?.skipped || false
     })
     
     // 检查是否完成当天所有事件
@@ -1022,10 +1238,46 @@ export class RealityGameState {
   }
 
   applyDecisionEffects(team, event, decision) {
+    // 跳过机制：资金/人力不足时允许跳过，但要付出代价
+    if (decision.skip) {
+      team.plantHealth = Math.max(0, team.plantHealth - 8)
+      team.teamMood = Math.max(0, team.teamMood - 12)
+      team.streak = 0
+      return { baseScore: 0, skipped: true }
+    }
+
     const questionType = event.questionType || 'single'
     let baseScore = 50
     let optionText = ''
     let optionId = decision.optionId
+
+    const canAfford = (moneyNeed, laborNeed) => {
+      const moneyOk = team.money >= (moneyNeed || 0)
+      const laborOk = team.labor >= (laborNeed || 0)
+      return moneyOk && laborOk
+    }
+    const applyCost = (cost) => {
+      const m = cost?.money || 0
+      const l = cost?.labor || 0
+      if (!canAfford(m, l)) return { ok: false, message: '资源不足（资金或人力不够）' }
+      team.money -= m
+      team.labor -= l
+      team.totalCost += m
+      team.netProfit = team.totalIncome - team.totalCost
+      return { ok: true }
+    }
+    const gainMoney = (amount) => {
+      if (!amount) return
+      team.money += amount
+      team.totalIncome += Math.max(0, amount)
+      if (amount < 0) team.totalCost += Math.abs(amount)
+      team.netProfit = team.totalIncome - team.totalCost
+    }
+    const calcFlowerUnitPrice = () => {
+      // 以品质为主的单价（元/朵），60%≈300，80%≈380
+      const q = Math.max(0, Math.min(100, team.flowerQuality))
+      return Math.round(220 + q * 2)
+    }
 
     if (questionType === 'multiple' && Array.isArray(decision.optionIds)) {
       const correct = event.correctOptionIds || []
@@ -1040,17 +1292,26 @@ export class RealityGameState {
       const partial = correct.length ? (correctCount / correct.length) * fullScore - wrongCount * 15 : 0
       baseScore = Math.max(0, Math.min(100, Math.round(partial)))
       optionText = selected.map(id => event.options?.find(o => o.id === id)?.text).filter(Boolean).join('；')
+      // 先汇总成本，确保可支付再结算（避免扣到负数）
+      const selectedOpts = (event.options || []).filter(opt => selected.includes(opt.id))
+      const totalMoneyNeed = selectedOpts.reduce((s, o) => s + (o.cost?.money || 0), 0)
+      const totalLaborNeed = selectedOpts.reduce((s, o) => s + (o.cost?.labor || 0), 0)
+      if (!canAfford(totalMoneyNeed, totalLaborNeed)) {
+        return { baseScore: 0, error: '资源不足（资金或人力不够）' }
+      }
+
       event.options?.forEach(opt => {
         if (!selected.includes(opt.id)) return
-        if (opt.cost) {
-          team.money -= opt.cost.money || 0
-          team.labor -= opt.cost.labor || 0
-          team.totalCost += opt.cost.money || 0
-        }
+        if (opt.cost) applyCost(opt.cost)
         if (opt.effects) this.applyOneOptionEffects(team, opt)
         if (opt.isOrganic === false) team.effects.organic = false
       })
     } else if (questionType === 'sort' && Array.isArray(decision.order)) {
+      for (const id of decision.order) {
+        if (!event.options?.find(o => o.id === id)) {
+          return { error: '排序选项无效' }
+        }
+      }
       const correctOrder = event.correctOrder || []
       let matchCount = 0
       for (let i = 0; i < correctOrder.length && i < decision.order.length; i++) {
@@ -1058,16 +1319,16 @@ export class RealityGameState {
       }
       baseScore = correctOrder.length ? Math.round((matchCount / correctOrder.length) * 100) : 50
       optionText = decision.order.map(id => event.options?.find(o => o.id === id)?.text).filter(Boolean).join(' → ')
+      // 排序題僅計分，不疊加各步 effects（題庫為流程順序，非獨立後果）
     } else {
       const option = event.options?.find(o => o.id === decision.optionId)
-      if (!option) return
+      if (!option) return { error: '选项不存在' }
       optionId = decision.optionId
       optionText = option.text
       baseScore = option.score ?? 50
       if (option.cost) {
-        team.money -= option.cost.money || 0
-        team.labor -= option.cost.labor || 0
-        team.totalCost += option.cost.money || 0
+        const r = applyCost(option.cost)
+        if (!r.ok) return { baseScore: 0, error: r.message }
       }
       if (option.effects) this.applyOneOptionEffects(team, option)
       if (option.isOrganic === false) team.effects.organic = false
@@ -1101,6 +1362,8 @@ export class RealityGameState {
       timestamp: Date.now()
     })
 
+    // 将「产出」转为现金：flowersHarvested 增量在 applyOneOptionEffects 里累计，
+    // 这里用当次选项文本推断不了增量，所以在 applyOneOptionEffects 内即时结算。
     return { baseScore }
   }
 
@@ -1117,13 +1380,42 @@ export class RealityGameState {
       this.checkStageProgress(team)
     }
     if (option.effects.flowers) {
-      if (option.effects.flowers > 0) team.flowersHarvested += option.effects.flowers
-      else team.flowersLost += Math.abs(option.effects.flowers)
+      if (option.effects.flowers > 0) {
+        team.flowersHarvested += option.effects.flowers
+        // 采收即时结算收入（解决“钱不会增加”）
+        const unit = Math.round(220 + Math.max(0, Math.min(100, team.flowerQuality)) * 2)
+        const income = option.effects.flowers * unit
+        team.money += income
+        team.totalIncome += income
+        team.netProfit = team.totalIncome - team.totalCost
+      } else {
+        team.flowersLost += Math.abs(option.effects.flowers)
+      }
     }
     if (option.effects.income) {
-      const incomeChange = Math.floor(option.effects.income * 10)
-      team.totalIncome += incomeChange
+      // income 用“百分比/幅度”表达时，按 100 元为单位换算为现金变化
+      const incomeChange = Math.floor(option.effects.income * 100)
+      team.money += incomeChange
+      if (incomeChange >= 0) team.totalIncome += incomeChange
+      else team.totalCost += Math.abs(incomeChange)
       team.netProfit = team.totalIncome - team.totalCost
+    }
+    if (option.effects.money) {
+      // money 为直接现金变化（正数为收入，负数为损失）
+      const amount = option.effects.money
+      if (amount >= 0) {
+        team.money += amount
+        team.totalIncome += amount
+      } else {
+        team.money = Math.max(0, team.money + amount)
+        team.totalCost += Math.abs(amount)
+      }
+      team.netProfit = team.totalIncome - team.totalCost
+    }
+    if (option.effects.laborLeave) {
+      const { count = 1, days = 1 } = option.effects.laborLeave
+      team.laborLeave = { count, untilDay: team.currentDay + days }
+      team.labor = Math.max(0, team.labor - count)
     }
   }
   
@@ -1140,6 +1432,8 @@ export class RealityGameState {
       this.addAchievement(team, `${currentStage.name}达成！`, '🌱')
       team.plantHealth = Math.min(100, team.plantHealth + 5)
       team.money += 200 // 阶段奖励
+      team.totalIncome += 200
+      team.netProfit = team.totalIncome - team.totalCost
     }
   }
   
@@ -1160,9 +1454,28 @@ export class RealityGameState {
     team.currentDay++
     team.currentWeekDay = (team.currentWeekDay + 1) % 7
     
-    // 恢复一些人力
-    team.labor = Math.min(GameConfig.STARTING_LABOR, team.labor + 2)
-    
+    // 每日刷新人力：回到基础人力，并受“请假”影响
+    const leaveActive = team.laborLeave?.count > 0 && team.currentDay <= (team.laborLeave?.untilDay || 0)
+    const leaveCount = leaveActive ? team.laborLeave.count : 0
+    if (!leaveActive && team.laborLeave?.count) {
+      team.laborLeave = { count: 0, untilDay: 0 }
+    }
+    team.baseLabor = GameConfig.STARTING_LABOR
+    team.labor = Math.max(0, GameConfig.STARTING_LABOR - leaveCount)
+
+    // 每日基礎農場收入（模擬茉莉花日常銷售與農場維運）
+    // 確保玩家不會因資金耗盡而完全動彈不得
+    const DAILY_BASE_INCOME = 800
+    const MIN_DAILY_MONEY = 1200  // 每天至少保有此金額，維持最低限度的決策空間
+    team.money += DAILY_BASE_INCOME
+    team.totalIncome += DAILY_BASE_INCOME
+    if (team.money < MIN_DAILY_MONEY) {
+      const supplement = MIN_DAILY_MONEY - team.money
+      team.money = MIN_DAILY_MONEY
+      team.totalIncome += supplement
+    }
+    team.netProfit = team.totalIncome - team.totalCost
+
     // 检查游戏结束
     if (team.currentDay > GameConfig.TOTAL_DAYS) {
       return this.endTeamGame(sessionId, teamId)
@@ -1191,7 +1504,15 @@ export class RealityGameState {
     team.status = 'finished'
     team.endedAt = Date.now()
     
-    const score = calculateFinalScore(team)
+    console.log(`[Reality] endTeamGame: team=${team.teamName}, day=${team.currentDay}, completedEvents=${team.completedEvents.length}`)
+    
+    let score
+    try {
+      score = calculateFinalScore(team)
+    } catch (e) {
+      console.error('[Reality] calculateFinalScore error:', e)
+      score = { totalScore: 0, grade: 'F', evaluation: '计算失败', details: {} }
+    }
     
     return {
       success: true,
@@ -1209,7 +1530,7 @@ export class RealityGameState {
     const stages = GameConfig.GROWTH_STAGES
     const currentStage = stages[team.growthStage]
     
-    return {
+    return toSimplifiedDeep({
       // 基本信息
       teamId: team.teamId,
       teamName: team.teamName,
@@ -1223,6 +1544,7 @@ export class RealityGameState {
       // 资源
       money: team.money,
       labor: team.labor,
+      baseLabor: team.baseLabor || GameConfig.STARTING_LABOR,
       
       // 经济数据
       totalIncome: team.totalIncome,
@@ -1262,7 +1584,7 @@ export class RealityGameState {
       // 增益/减益
       buffs: team.effects.buffs,
       debuffs: team.effects.debuffs
-    }
+    })
   }
 
   getLeaderboard(sessionId) {

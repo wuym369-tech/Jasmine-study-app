@@ -4,6 +4,7 @@
 import { scenarios } from '../src/data/discussScenarios.js'
 import {
   sessions,
+  roomCodes,
   createSession,
   getSessionByCode,
   joinTeam,
@@ -19,7 +20,7 @@ export function registerHandlers(io, socket) {
   // ---- 老师：重新加入（刷新页面）----
   socket.on('teacher:rejoin', ({ sessionId }) => {
     const session = sessions[sessionId]
-    if (!session) return socket.emit('error', { message: '场次不存在或已结束' })
+    if (!session) return socket.emit('teacher:error', { message: '场次不存在或已结束' })
     session.teacherSocketId = socket.id
     socket.join(sessionId)
     socket.emit('teacher:rejoined', {
@@ -61,7 +62,7 @@ export function registerHandlers(io, socket) {
   // ---- 老师：开始当前题目 ----
   socket.on('teacher:start_question', ({ sessionId }) => {
     const session = sessions[sessionId]
-    if (!session) return socket.emit('error', { message: '场次不存在' })
+    if (!session) return socket.emit('teacher:error', { message: '场次不存在' })
 
     startQuestion(session)
     const qId = session.questionIds[session.currentIndex]
@@ -107,7 +108,7 @@ export function registerHandlers(io, socket) {
   // ---- 老师：揭晓答案 ----
   socket.on('teacher:reveal_answer', ({ sessionId }) => {
     const session = sessions[sessionId]
-    if (!session) return socket.emit('error', { message: '场次不存在' })
+    if (!session) return socket.emit('teacher:error', { message: '场次不存在' })
 
     const qId = session.questionIds[session.currentIndex]
     const q = scenarios.find(s => s.id === qId)
@@ -130,7 +131,7 @@ export function registerHandlers(io, socket) {
   // ---- 老师：下一题 ----
   socket.on('teacher:next_question', ({ sessionId }) => {
     const session = sessions[sessionId]
-    if (!session) return socket.emit('error', { message: '场次不存在' })
+    if (!session) return socket.emit('teacher:error', { message: '场次不存在' })
     // Just signal ready for next (client calls start_question)
     io.to(sessionId).emit('game:waiting_next')
   })
@@ -146,7 +147,7 @@ export function registerHandlers(io, socket) {
   // ---- 老师：结束场次 ----
   socket.on('teacher:end_session', ({ sessionId }) => {
     const session = sessions[sessionId]
-    if (!session) return socket.emit('error', { message: '场次不存在' })
+    if (!session) return socket.emit('teacher:error', { message: '场次不存在' })
     const result = endSession(session, { scenarios })
     io.to(sessionId).emit('game:session_ended', {
       finalScores: result.teamScores,

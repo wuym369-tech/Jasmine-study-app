@@ -187,37 +187,126 @@ export const agricultureKnowledge = {
   },
   
   // AI助手系統提示詞和回覆模板
-  aiSystemPrompt: `你是「AI农业小帮手」，具備农业硕士/博士級专业知识，专精茉莉花種植，同时精通一般农作物栽培管理。
+  aiSystemPrompt: `你是「茉莉小达人」AI农业小帮手，具備农业硕士/博士級专业知识，专精茉莉花種植，同时精通一般农作物栽培管理。
+
+重要原則：
+- 不要說「無法回答」「無法理解」「超出能力範圍」等拒絕用語。只要與茉莉花、農業、栽培、澆水、施肥、土壤、病蟲害、修剪、採收相關，一律根據下方知識庫與常識給出具體、可操作的建議。
+- 若用戶問「你是誰」「什麼模型」「用什麼技術」：請簡短回答你是茉莉小达人，專注茉莉花與農業問題，背後使用 Qwen 技術協助回答，並歡迎他問栽培、病蟲害等問題。
+- 若問題較模糊，先做合理推測（例如問「葉子黃」可從澆水、施肥、病蟲、積水等常見原因給建議），再補充「若情況不同可再補充描述」。
+- 只有與農業完全無關（如醫療、法律、數學題）才可簡短說明「這類問題建議諮詢專業人士」，並順帶提醒可問茉莉花相關問題。
 
 知识範圍：
-1. 茉莉花专业：广西横州官方標準DB45/T 2605-2022、病虫害綜合防治、栽培技术
-2. 土壤肥料学：植物營养吸收机理、土壤改良、施肥技术
-3. 植物生理学：光合作用、呼吸作用、逆境生理（温度、水分脅迫）
+1. 茉莉花专业：广西横州官方標準、病虫害綜合防治、栽培技术
+2. 土壤肥料学：植物營养、土壤改良、施肥技术
+3. 植物生理学：光合、呼吸、逆境生理（温度、水分）
 4. 作物栽培学：種植制度、IPM綜合防治
 
 回答风格：
 - 专业但易懂，农民聽得懂
 - 給出具体操作建議（什麼时候做、做多少）
-- 遇到不確定的问題，坦承「這个需要更多資信」
-- 不胡亂推薦未经證實的方法
 - 涉及农药时強调安全間隔期、防護措施
 
-茉莉花专属知识重點：
-- 3°C以下即受凍傷，0°C枝條死亡
-- 清明重剪是全年最重要工作
-- 花期6个月，7-8月伏花品质最佳
-- 极怕積水，但又需充足水分
+茉莉花专属知識重點：
+- 3°C以下即受凍傷，0°C枝條死亡；清明重剪是全年最重要工作
+- 花期約6个月，7-8月伏花品质最佳；极怕積水但需充足水分
 - 紅蜘蛛、薊馬是主要害虫，傍晚噴药效果最佳`,
   
-  // 常見问題快速回覆
+  // 常見问題快速回覆（鍵為可匹配的問法片段，多種說法對應同一答案）
   faq: {
     '茉莉花什麼时候修剪': '全年最重要是清明前后（4月初）重剪，保留4-5主枝。每批花谢后轻剪促新枝。10月后只去病枯枝，不可重剪防凍傷。',
+    '怎麼修剪': '全年最重要是清明前后（4月初）重剪，保留4-5主枝。每批花谢后轻剪促新枝。10月后只去病枯枝，不可重剪防凍傷。',
+    '如何修剪': '全年最重要是清明前后（4月初）重剪，保留4-5主枝。每批花谢后轻剪促新枝。10月后只去病枯枝，不可重剪防凍傷。',
     '茉莉花浇水': '見幹見湿，土表幹白再浇。夏季早晚各一次避開正午，冬季少浇。切記：茉莉花极怕積水烂根！',
+    '怎麼浇水': '見幹見湿，土表幹白再浇。夏季早晚各一次避開正午，冬季少浇。切記：茉莉花极怕積水烂根！',
+    '如何浇水': '見幹見湿，土表幹白再浇。夏季早晚各一次避開正午，冬季少浇。切記：茉莉花极怕積水烂根！',
     '茉莉花施肥': '生長期7-10天薄肥（豆餅水兌10-15倍），8月加磷鉀促花，9月1日起停肥。高温花期慎施氮肥。',
+    '怎麼施肥': '生長期7-10天薄肥（豆餅水兌10-15倍），8月加磷鉀促花，9月1日起停肥。高温花期慎施氮肥。',
     '紅蜘蛛怎麼辦': '重點噴葉背！40%三氯殺螨醇1500倍液或螺螨酯，7天一次連噴2-3次，輪換用药防抗药性。同时提高湿度可抑制。',
+    '紅蜘蛛': '重點噴葉背！40%三氯殺螨醇1500倍液或螺螨酯，7天一次連噴2-3次，輪換用药防抗药性。同时提高湿度可抑制。',
     '什麼时候採花': '下午2-4點精油含量最高！花蕾由綠轉白、飽滿緊闭时採，拇食指轻捏旋轉採摘，禁工具。',
+    '什麼時候採花': '下午2-4點精油含量最高！花蕾由綠轉白、飽滿緊闭时採，拇食指轻捏旋轉採摘，禁工具。',
     '茉莉花凍傷': '3°C以下即受損！寒潮来前必須移入或搭棚，不可僥倖。凍后落葉是正常反应，春季會再萌发。',
+    '凍傷': '3°C以下即受損！寒潮来前必須移入或搭棚，不可僥倖。凍后落葉是正常反应，春季會再萌发。',
   },
+}
+
+// ---------- 農業資料庫檢索：把知識庫壓平為可搜尋的片段 ----------
+function flattenToChunks(obj, prefix = '', chunks = []) {
+  if (typeof obj === 'string') {
+    if (obj.length > 10) chunks.push({ label: prefix.replace(/^\./, ''), text: obj })
+    return chunks
+  }
+  if (Array.isArray(obj)) {
+    obj.forEach((item, i) => {
+      if (typeof item === 'string' && item.length > 10) {
+        chunks.push({ label: `${prefix}[${i}]`.replace(/^\./, ''), text: item })
+      } else if (item && typeof item === 'object') {
+        flattenToChunks(item, `${prefix}[${i}]`, chunks)
+      }
+    })
+    return chunks
+  }
+  if (obj && typeof obj === 'object') {
+    for (const [k, v] of Object.entries(obj)) {
+      const key = prefix ? `${prefix}.${k}` : k
+      if (typeof v === 'string') {
+        if (v.length > 10) chunks.push({ label: key, text: v })
+      } else if (v && typeof v === 'object' && k !== 'faq' && k !== 'aiSystemPrompt') {
+        flattenToChunks(v, key, chunks)
+      }
+    }
+  }
+  return chunks
+}
+
+let _knowledgeChunks = null
+function getKnowledgeChunks() {
+  if (_knowledgeChunks) return _knowledgeChunks
+  _knowledgeChunks = flattenToChunks({
+    jasmine: agricultureKnowledge.jasmine,
+    generalAgriculture: agricultureKnowledge.generalAgriculture
+  })
+  return _knowledgeChunks
+}
+
+/**
+ * 從農業資料庫找與問題最相關的片段（依關鍵字重疊程度排序）
+ * @param {string} query - 用戶問題
+ * @param {number} limit - 最多回傳幾則
+ * @returns {{ chunks: Array<{label,text}>, bestText: string }}
+ */
+const _s2t = { '叶': '葉', '黄': '黃', '发': '發', '虫': '蟲', '气': '氣', '湿': '濕', '药': '藥', '种': '種', '护': '護', '产': '產', '学': '學', '质': '質', '经': '經', '营': '營', '阴': '陰', '线': '線', '对': '對', '时': '時', '间': '間', '问': '問', '题': '題', '开': '開', '关': '關', '门': '門' }
+function normalizeForSearch(s) {
+  let r = (s || '').replace(/\s+/g, '')
+  Object.entries(_s2t).forEach(([simp, trad]) => { r = r.replace(new RegExp(simp, 'g'), trad) })
+  return r
+}
+
+export function searchAgricultureKnowledge(query, limit = 8) {
+  const q = normalizeForSearch((query || '').trim())
+  if (!q || q.length < 1) return { chunks: [], bestText: '' }
+  const chunks = getKnowledgeChunks()
+  const qLen = q.length
+  const scored = chunks.map(({ label, text }) => {
+    const t = normalizeForSearch(label + text)
+    let score = 0
+    for (let len = Math.min(4, qLen); len >= 1; len--) {
+      for (let i = 0; i <= qLen - len; i++) {
+        const seg = q.slice(i, i + len)
+        if (seg.length >= 2 && t.includes(seg)) score += len
+        if (seg.length === 1 && t.includes(seg)) score += 0.5
+      }
+    }
+    if (qLen >= 2 && t.includes(q)) score += 20
+    return { label, text, score }
+  })
+  scored.sort((a, b) => b.score - a.score)
+  const top = scored.filter(s => s.score > 0).slice(0, limit)
+  const bestText = top.length > 0 ? top.map(c => c.text).join('\n\n') : ''
+  return {
+    chunks: top.map(({ label, text }) => ({ label, text })),
+    bestText
+  }
 }
 
 // 關鍵字对照表，用于快速检索

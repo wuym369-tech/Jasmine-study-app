@@ -142,18 +142,27 @@ export function setupRealitySocketHandlers(io) {
         return
       }
       
-      const result = realityGame.submitDecision(sessionId, teamId, eventInstanceId, decision)
+      let result
+      try {
+        result = realityGame.submitDecision(sessionId, teamId, eventInstanceId, decision)
+      } catch (e) {
+        console.error('[Reality] submitDecision threw:', e)
+        socket.emit('reality:error', { message: '服务器内部错误：' + e.message })
+        return
+      }
       if (result.error) {
         socket.emit('reality:error', { message: result.error })
         return
       }
       
-      // 发送给该队伍
+      console.log(`[Reality] submit result: finished=${result.finished}, dayChanged=${result.dayChanged}`)
+      
+      // 发送给该队伍（游戏结束时用 finalStats 作为 teamStatus）
       socket.emit('reality:decision_submitted', {
-        teamStatus: result.teamStatus,
+        teamStatus: result.finished ? (result.result?.finalStats ?? null) : result.teamStatus,
         eventInstanceId,
-        dayChanged: result.dayChanged,
-        finished: result.finished
+        dayChanged: result.dayChanged ?? result.finished ?? false,
+        finished: result.finished ?? false
       })
       
       // 如果游戏结束
@@ -161,10 +170,10 @@ export function setupRealitySocketHandlers(io) {
         socket.emit('reality:finished', { result: result.result })
       }
       
-      // 广播排行榜更新给大屏幕
-      io.to(`reality:${sessionId}`).emit('reality:leaderboard', {
-        leaderboard: realityGame.getLeaderboard(sessionId)
-      })
+      // 广播排行榜更新（同时发给 session room 与 screen room 确保大屏幕必收到）
+      const lb = realityGame.getLeaderboard(sessionId)
+      io.to(`reality:${sessionId}`).emit('reality:leaderboard', { leaderboard: lb })
+      io.to(`reality:screen:${sessionId}`).emit('reality:leaderboard', { leaderboard: lb })
     })
 
     // 获取当前状态

@@ -1,7 +1,8 @@
 <template>
-  <div class="reality-screen min-h-screen bg-cream-50 overflow-hidden">
+  <div class="reality-screen min-h-screen overflow-hidden">
+    <div class="reality-screen-bg" aria-hidden="true" />
     <!-- 顶部状态栏 -->
-    <div class="reality-screen-nav fixed top-0 left-0 right-0 z-50 border-b border-stone-200">
+    <div class="reality-screen-nav fixed top-0 left-0 right-0 z-50">
       <div class="reality-screen-nav-inner max-w-6xl mx-auto px-6 md:px-8 h-20 flex items-center justify-between">
         <div class="flex items-center gap-6">
           <div class="flex items-center gap-3">
@@ -36,7 +37,7 @@
     </div>
 
     <!-- 主内容区 -->
-    <div class="pt-28 px-4 md:px-8 pb-8 h-screen overflow-hidden flex justify-center">
+    <div class="reality-screen-main pt-28 px-4 md:px-8 pb-8 h-screen overflow-hidden flex justify-center">
       <!-- 等待加入 -->
       <div v-if="!sessionId || leaderboard.length === 0" class="h-full flex items-center justify-center w-full max-w-4xl">
         <div class="text-center">
@@ -47,7 +48,7 @@
           <p class="text-2xl text-stone-500 mb-8">
             {{ sessionId ? '等待队伍加入...' : '大屏幕已就绪，等待场次创建...' }}
           </p>
-          <div v-if="sessionId" class="bg-white rounded-3xl p-8 shadow-xl border border-stone-200">
+          <div v-if="sessionId" class="reality-screen-wait-card">
             <div class="text-lg text-stone-500 mb-2">场次号</div>
             <div class="text-7xl font-mono font-bold tracking-widest text-coral-500">{{ sessionId }}</div>
           </div>
@@ -293,16 +294,55 @@ onUnmounted(() => {
 @reference "tailwindcss";
 
 .reality-screen {
+  position: relative;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #fdfbf7;
+}
+
+.reality-screen-bg {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(212, 112, 74, 0.07), transparent),
+    radial-gradient(ellipse 50% 40% at 100% 60%, rgba(122, 159, 70, 0.06), transparent);
+}
+
+.reality-screen-main {
+  position: relative;
+  z-index: 1;
 }
 
 .reality-screen-nav {
-  background: rgba(253, 251, 247, 0.95);
+  background: rgba(253, 251, 247, 0.92);
   backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(139, 115, 85, 0.1);
+  box-shadow: 0 4px 20px rgba(90, 74, 58, 0.04);
 }
 
 .reality-screen-nav-inner {
   padding: 0 24px;
+}
+
+.reality-screen-wait-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 252, 248, 0.96));
+  border-radius: 1.5rem;
+  padding: 2rem;
+  border: 1px solid rgba(139, 115, 85, 0.12);
+  box-shadow: 0 8px 40px rgba(90, 74, 58, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.reality-screen-wait-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #d4704a, #f59e0b, #7a9f46);
 }
 
 .screen-teams-grid {
@@ -310,7 +350,8 @@ onUnmounted(() => {
 }
 
 .screen-team-card {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 24px rgba(90, 74, 58, 0.08);
+  border-width: 2px;
 }
 .screen-team-card--first {
   box-shadow: 0 8px 32px rgba(212, 112, 74, 0.25);

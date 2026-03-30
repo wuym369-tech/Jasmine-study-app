@@ -41,9 +41,19 @@
               <p class="text-xs text-green-200">茉莉花博士级专业知识</p>
             </div>
           </div>
-          <button @click="toggleChat" class="text-white/80 hover:text-white">
-            <span class="text-xl">✕</span>
-          </button>
+          <div class="flex items-center gap-1">
+            <button
+              v-if="messages.length > 0"
+              @click="clearContext"
+              class="p-1.5 rounded text-white/80 hover:text-white hover:bg-white/10 text-xs"
+              title="清除對話"
+            >
+              清除
+            </button>
+            <button @click="toggleChat" class="p-1.5 rounded text-white/80 hover:text-white">
+              <span class="text-xl">✕</span>
+            </button>
+          </div>
         </div>
 
         <!-- 消息区 -->
@@ -154,7 +164,7 @@
 
 <script setup>
 import { ref, computed, nextTick, onMounted } from 'vue'
-import { agricultureKnowledge, keywordMap } from '../data/agricultureKnowledge.js'
+import { agricultureKnowledge, keywordMap, searchAgricultureKnowledge } from '../data/agricultureKnowledge.js'
 
 const isOpen = ref(false)
 const inputMessage = ref('')
@@ -265,8 +275,18 @@ const quickQuestions = [
   '土壤pH怎麼調節？',
 ]
 
-// API 金鑰請在專案根目錄建立 .env 並設定 VITE_MINIMAX_API_KEY=你的金鑰（見 .env.example）
-const MINIMAX_API_KEY = import.meta.env.VITE_MINIMAX_API_KEY || ''
+// Google Gemini（優先）：.env 設定 VITE_GEMINI_API_KEY
+const GEMINI_API_KEY = (import.meta.env.VITE_GEMINI_API_KEY || '').trim()
+const GEMINI_MODEL = (import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash').trim()
+// 本地 Qwen（Ollama）：.env 設定 VITE_QWEN_LOCAL_URL=http://localhost:11434，模型預設 qwen2.5:14b
+const QWEN_LOCAL_URL = (import.meta.env.VITE_QWEN_LOCAL_URL || '').trim()
+const QWEN_LOCAL_MODEL = (import.meta.env.VITE_QWEN_LOCAL_MODEL || 'qwen2.5:14b').trim()
+// 雲端 Qwen（備用）：設定 VITE_QWEN_API_KEY 時使用
+const QWEN_API_KEY = (import.meta.env.VITE_QWEN_API_KEY || '').trim()
+const useLocalQwen = QWEN_LOCAL_URL.length > 0
+const hasGeminiKey = GEMINI_API_KEY.length > 0
+const hasCloudQwenKey = QWEN_API_KEY.length > 0
+const hasAnyAI = hasGeminiKey || useLocalQwen || hasCloudQwenKey
 
 // 用于区分点击和拖拽
 let dragStartTime = 0
@@ -288,6 +308,11 @@ function handleBtnMouseUp(e) {
   if (dragDuration < 200 && dragDistance < 5) {
     toggleChat()
   }
+}
+
+function clearContext() {
+  messages.value = []
+  unreadCount.value = 0
 }
 
 function toggleChat() {
@@ -321,22 +346,45 @@ async function sendMessage() {
   nextTick(() => scrollToBottom())
 
   try {
-    // 先尝试本地知識庫匹配
+    // 自我介紹／模型類問題直接回覆，不交給模型（避免回「無法理解」）
+    const identityAnswer = getIdentityAnswer(userMessage)
+    if (identityAnswer) {
+      await new Promise(r => setTimeout(r, 300))
+      messages.value.push({ role: 'assistant', content: identityAnswer })
+      return
+    }
+
+    // 先嘗試本地知識庫精確匹配（FAQ / 關鍵字）
     const localAnswer = findLocalAnswer(userMessage)
-    
-    if (localAnswer && localAnswer.confidence > 0.8) {
-      // 高信心本地回答
-      await new Promise(r => setTimeout(r, 500)) // 模擬思考延遲
-      messages.value.push({ 
-        role: 'assistant', 
-        content: localAnswer.answer 
-      })
+    // 再從農業資料庫做「類似問題」檢索，找出相關片段（不論有無精確匹配都搜一次，給 AI 當依據）
+    const searchResult = searchAgricultureKnowledge(userMessage, 8)
+
+    if (localAnswer && (localAnswer.confidence > 0.65 || !hasAnyAI)) {
+      // 有本地答案且信心夠高，或沒有 API 時優先使用本地
+      await new Promise(r => setTimeout(r, 500))
+      let content = localAnswer.answer
+      if (!hasAnyAI && localAnswer.confidence <= 0.65) {
+        content += '\n\n💡 目前僅使用知識庫回答。若需更智能回覆，請在 .env 設定 VITE_GEMINI_API_KEY，或啟動本機 Ollama（如 qwen2.5:14b）並設定 VITE_QWEN_LOCAL_URL=http://localhost:11434。'
+      }
+      messages.value.push({ role: 'assistant', content })
+    } else if (searchResult.chunks.length > 0 && !hasAnyAI) {
+      // 無 API 但有檢索到相關資料：直接組一段「根據資料庫」的回答
+      await new Promise(r => setTimeout(r, 400))
+      const content = formatRetrievedAnswer(searchResult.chunks, userMessage)
+      messages.value.push({ role: 'assistant', content })
+    } else if (hasAnyAI) {
+      // 有 AI：把「檢索到的農業資料庫內容」塞進系統提示，讓模型優先依資料庫回答
+      const knowledgeContext = [localAnswer?.answer, searchResult.bestText].filter(Boolean).join('\n\n---\n\n')
+      const aiResponse = await callQwenAPI(userMessage, localAnswer, knowledgeContext)
+      const fallbackFromDb = searchResult.chunks.length > 0 ? formatRetrievedAnswer(searchResult.chunks, userMessage) : ''
+      const contextForFallback = { answer: localAnswer?.answer || fallbackFromDb }
+      const finalContent = normalizeAIResponse(aiResponse, contextForFallback)
+      messages.value.push({ role: 'assistant', content: finalContent })
     } else {
-      // 調用 Minimax API
-      const aiResponse = await callMinimaxAPI(userMessage, localAnswer)
-      messages.value.push({ 
-        role: 'assistant', 
-        content: aiResponse 
+      // 無 API 且無本地匹配：給出引導
+      messages.value.push({
+        role: 'assistant',
+        content: '你可以試試問：「茉莉花怎麼修剪？」「紅蜘蛛怎麼防治？」「什麼時候採花最好？」若需更智能回覆，請在 .env 設定 VITE_GEMINI_API_KEY，或啟動本機 Ollama（qwen2.5:14b）並設定 VITE_QWEN_LOCAL_URL=http://localhost:11434。'
       })
     }
   } catch (error) {
@@ -349,6 +397,20 @@ async function sendMessage() {
     isLoading.value = false
     nextTick(() => scrollToBottom())
   }
+}
+
+// 用戶問「你是什麼模型」「你是誰」等時，直接回覆，不呼叫模型
+function getIdentityAnswer(query) {
+  const q = (query || '').trim().toLowerCase().replace(/[？?！!]/g, '')
+  if (!q) return ''
+  const identityKeywords = ['什麼模型', '你是誰', '你是什麼', '你叫什麼', '哪個模型', '用什麼模型', '什麼技術', '你是ai', '你是機器人']
+  if (!identityKeywords.some(k => q.includes(k))) return ''
+  const modelDesc = hasGeminiKey
+    ? '我背後優先使用 Google Gemini 來協助回答；如果它暫時不可用，會改走本機 Qwen 或知識庫。'
+    : useLocalQwen
+      ? '我背後使用本機的 Qwen 14B（Ollama）來協助回答。'
+      : '我背後使用 Qwen 技術來協助回答。'
+  return `我是茉莉小达人～專注茉莉花與農業問題的 AI 小幫手。${modelDesc}\n\n歡迎問我修剪、澆水、施肥、病蟲害防治、採收等問題，例如：「清明怎麼修剪？」「紅蜘蛛怎麼辦？」`
 }
 
 function findLocalAnswer(query) {
@@ -367,13 +429,13 @@ function findLocalAnswer(query) {
     }
   }
 
-  // FAQ 精確匹配
-  for (const [question, answer] of Object.entries(agricultureKnowledge.faq)) {
-    if (lowerQuery.includes(question.toLowerCase().replace(/[？?]/g, ''))) {
-      return {
-        answer: answer,
-        confidence: 0.95
-      }
+  // FAQ 匹配（依鍵長由長到短，優先匹配較具體的問法）
+  const faqEntries = Object.entries(agricultureKnowledge.faq)
+    .map(([q, a]) => [q.toLowerCase().replace(/[？?]/g, ''), a])
+    .sort((a, b) => b[0].length - a[0].length)
+  for (const [question, answer] of faqEntries) {
+    if (lowerQuery.includes(question)) {
+      return { answer, confidence: 0.95 }
     }
   }
 
@@ -436,47 +498,148 @@ function extractKnowledge(paths) {
   return result.length > 0 ? result.join('\n\n') : null
 }
 
-async function callMinimaxAPI(userMessage, localContext) {
-  // 構建系統提示詞
-  const systemPrompt = agricultureKnowledge.aiSystemPrompt + 
-    '\n\n本地知識庫參考（優先使用）：\n' + 
-    (localContext?.answer || '')
+// 無 API 時，用檢索到的資料庫片段組成一段回答
+function formatRetrievedAnswer(chunks, query) {
+  const parts = chunks.slice(0, 5).map(c => c.text)
+  const combined = parts.join('\n\n')
+  return `根據農業資料庫裡與「${query}」相關的內容，整理如下：\n\n${combined}\n\n若想更精準對應你的情況，可以再描述一下（例如季節、症狀），或問更具體的問題如「清明怎麼修剪？」「紅蜘蛛怎麼防治？」`
+}
 
+function buildConversationMessages(systemPrompt) {
+  return [
+    { role: 'system', content: systemPrompt },
+    ...messages.value.map(m => ({
+      role: m.role,
+      content: m.content
+    }))
+  ]
+}
+
+async function callQwenAPI(userMessage, localContext, knowledgeContext) {
+  const dbBlock = (knowledgeContext || localContext?.answer || '').trim()
+  const systemPrompt = agricultureKnowledge.aiSystemPrompt +
+    (dbBlock
+      ? '\n\n【以下為從農業資料庫檢索到的相關內容，請務必優先根據這些內容回答，不要說無法理解或無法回答】\n\n' + dbBlock
+      : '')
+
+  const conversationMessages = buildConversationMessages(systemPrompt)
+
+  if (hasGeminiKey) {
+    return callGoogleGeminiAPI(conversationMessages, localContext)
+  }
+  if (useLocalQwen) {
+    return callLocalOllama(conversationMessages, localContext)
+  }
+  return callCloudQwen(conversationMessages, localContext)
+}
+
+// Google Gemini（AI Studio / Generative Language API）
+async function callGoogleGeminiAPI(chatMessages, localContext) {
   try {
-    const response = await fetch('https://api.minimaxi.chat/v1/text/chatcompletion_v2', {
+    const systemPrompt = chatMessages.find(m => m.role === 'system')?.content || ''
+    const response = await fetch('/api/gemini', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${MINIMAX_API_KEY}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'abab6.5-chat',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...messages.value.filter(m => m.role !== 'system').map(m => ({
-            role: m.role,
-            content: m.content
-          }))
-        ],
-        temperature: 0.7,
-        max_tokens: 800
+        systemPrompt,
+        messages: chatMessages,
+        model: GEMINI_MODEL
       })
     })
 
     if (!response.ok) {
-      throw new Error(`API錯誤: ${response.status}`)
+      const errText = await response.text()
+      throw new Error(`Gemini Proxy 錯誤 ${response.status}: ${errText}`)
     }
 
     const data = await response.json()
-    return data.choices?.[0]?.message?.content || '抱歉，我無法理解你的問題，請尝试換個方式問。'
+    const text = (data.text || '').trim()
+    return text || (localContext?.answer ?? '')
   } catch (error) {
-    console.error('Minimax API錯誤:', error)
-    // API 失敗時退回本地回答
+    console.error('Gemini API 錯誤:', error)
     if (localContext?.answer) {
-      return localContext.answer + '\n\n（注：AI服务暫時不可用，以上為知識庫標準答案）'
+      return localContext.answer + '\n\n（注：Google 服務暫時不可用，以上為知識庫答案）'
     }
-    return '抱歉，AI服务暫時不可用，請稍後再试。建議提問具體問題如「茉莉花怎麼修剪」。'
+    return 'Google Gemini 暫時無法連線，請稍後再試。'
   }
+}
+
+// 本機 Ollama（Qwen 14B 等）
+async function callLocalOllama(chatMessages, localContext) {
+  const base = QWEN_LOCAL_URL.replace(/\/$/, '')
+  const url = `${base}/v1/chat/completions`
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: QWEN_LOCAL_MODEL,
+        messages: chatMessages,
+        temperature: 0.7,
+        max_tokens: 800
+      })
+    })
+    if (!response.ok) {
+      const errText = await response.text()
+      throw new Error(`Ollama 錯誤 ${response.status}: ${errText}`)
+    }
+    const data = await response.json()
+    const content = (data.choices?.[0]?.message?.content || data.message?.content || '').trim()
+    return content || (localContext?.answer ?? '')
+  } catch (error) {
+    console.error('本機 Ollama 錯誤:', error)
+    if (localContext?.answer) {
+      return localContext.answer + '\n\n（注：本機模型暫時不可用，以上為知識庫答案）'
+    }
+    return '本機 Qwen 暫時無法連線，請確認 Ollama 已啟動且已拉取模型（例如：ollama run qwen2.5:14b）。你也可以問茉莉花修剪、紅蜘蛛防治等，我會用知識庫回答。'
+  }
+}
+
+// 雲端 Qwen（DashScope）
+async function callCloudQwen(chatMessages, localContext) {
+  try {
+    const response = await fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${QWEN_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'qwen-plus',
+        messages: chatMessages,
+        temperature: 0.7,
+        max_tokens: 800
+      })
+    })
+    if (!response.ok) {
+      throw new Error(`API錯誤: ${response.status}`)
+    }
+    const data = await response.json()
+    const content = (data.choices?.[0]?.message?.content || '').trim()
+    return content || (localContext?.answer ?? '')
+  } catch (error) {
+    console.error('Qwen 雲端 API 錯誤:', error)
+    if (localContext?.answer) {
+      return localContext.answer + '\n\n（注：AI 服務暫時不可用，以上為知識庫答案）'
+    }
+    return '抱歉，AI 服務暫時不可用，請稍後再試。建議提問具體問題如「茉莉花怎麼修剪」。'
+  }
+}
+
+// 若 API 回傳空或像「無法回答／無法理解」的拒絕用語，改回本地答案或友善說明
+function normalizeAIResponse(aiResponse, localContext) {
+  const t = (aiResponse || '').trim()
+  if (!t) {
+    if (localContext?.answer) return localContext.answer
+    return '我根據目前知識庫暫時沒有對應答案，建議你試試更具體的問題，例如：「茉莉花怎麼修剪？」「紅蜘蛛怎麼防治？」'
+  }
+  const refusalPhrases = ['無法回答', '無法理解', '超出能力', '超出範圍', '不能回答', '不好意思，我']
+  const looksLikeRefusal = refusalPhrases.some(p => t.includes(p)) && t.length < 150
+  if (looksLikeRefusal) {
+    if (localContext?.answer) return localContext.answer
+    return '這題我暫時沒把握答得準～你可以改問茉莉花相關的，例如：「怎麼修剪？」「紅蜘蛛怎麼防治？」「什麼時候採花？」我都會盡量根據知識庫給你建議。'
+  }
+  return aiResponse
 }
 
 onMounted(() => {
